@@ -42,7 +42,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Architects+Daughter&amp;family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=Fira+Code:wght@300..700&amp;family=Geist+Mono:wght@100..900&amp;family=Geist:wght@100..900&amp;family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&amp;family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&amp;family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&amp;family=Lora:ital,wght@0,400..700;1,400..700&amp;family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&amp;family=Montserrat:ital,wght@0,100..900;1,100..900&amp;family=Open+Sans:ital,wght@0,300..800;1,300..800&amp;family=Outfit:wght@100..900&amp;family=Oxanium:wght@200..800&amp;family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Roboto+Mono:ital,wght@0,100..700;1,100..700&amp;family=Roboto:ital,wght@0,100..900;1,100..900&amp;family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&amp;family=Space+Grotesk:wght@300..700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Roboto:wdth,wght@82.3,406&display=swap"
       rel="stylesheet"
     />
     <script type="module">
@@ -2171,7 +2171,7 @@
       type="text/css"
       data-vite-dev-id="/home/runner/workspace/client/src/index.css"
     >
-      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Roboto:wdth,wght@82.3,406&display=swap");
 
       *,
       ::before,
@@ -2706,6 +2706,11 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       body {
         background-color: var(--background);
         font-family: var(--font-sans);
+        font-optical-sizing: auto;
+        font-weight: 406;
+        font-style: normal;
+        font-variation-settings: "wdth" 82.3;
+        font-size: 1.05rem;
         color: var(--foreground);
       }
 
@@ -2740,6 +2745,13 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       @media (min-width: 1536px) {
         .container {
           max-width: 1536px;
+        }
+      }
+
+      @media (min-width: 1280px) {
+        .xl\:text-7xl {
+          font-size: 5rem; /* Added for hero section */
+          line-height: 1.1;
         }
       }
 
@@ -4479,13 +4491,18 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       }
 
       .text-2xl {
-        font-size: 1.5rem;
-        line-height: 2rem;
+        font-size: 1.65rem; /* Increased from 1.5rem */
+        line-height: 2.2rem; /* Increased from 2rem */
+      }
+
+      .text-3xl {
+        font-size: 2rem; /* Added for hero section */
+        line-height: 2.5rem;
       }
 
       .text-4xl {
-        font-size: 2.25rem;
-        line-height: 2.5rem;
+        font-size: 2.5rem; /* Increased from 2.25rem */
+        line-height: 2.8rem; /* Increased from 2.5rem */
       }
 
       .text-\[0\.8rem\] {
@@ -4498,8 +4515,8 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       }
 
       .text-lg {
-        font-size: 1.125rem;
-        line-height: 1.75rem;
+        font-size: 1.25rem; /* Increased from 1.125rem for hero subtitle */
+        line-height: 1.9rem; /* Increased from 1.75rem */
       }
 
       .text-sm {
@@ -4508,8 +4525,8 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       }
 
       .text-xl {
-        font-size: 1.25rem;
-        line-height: 1.75rem;
+        font-size: 1.4rem; /* Increased from 1.25rem for navigation */
+        line-height: 1.9rem; /* Increased from 1.75rem */
       }
 
       .text-xs {
@@ -5058,8 +5075,8 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       --stepdoc-slate-800: hsl(217.2 32.6% 17.5%);
       --stepdoc-slate-900: hsl(222.2 84% 4.9%);
 
-        --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system,
-          BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        --font-sans: "Roboto", ui-sans-serif, system-ui, -apple-system,
+          BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
           "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
           "Segoe UI Symbol", "Noto Color Emoji";
       }
@@ -6223,8 +6240,8 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
         }
 
         .sm\:text-5xl {
-          font-size: 3rem;
-          line-height: 1;
+          font-size: 3.3rem; /* Increased from 3rem */
+          line-height: 1.1; /* Increased from 1 */
         }
 
         .data-\[state\=open\]\:sm\:slide-in-from-bottom-full[data-state="open"] {
@@ -6276,6 +6293,11 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
         .md\:text-sm {
           font-size: 0.875rem;
           line-height: 1.25rem;
+        }
+
+        .md\:text-5xl {
+          font-size: 3.5rem; /* Added for hero section */
+          line-height: 1.1;
         }
 
         .md\:opacity-0 {
@@ -6339,8 +6361,8 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
         }
 
         .lg\:text-6xl {
-          font-size: 3.75rem;
-          line-height: 1;
+          font-size: 4.2rem; /* Increased from 3.75rem */
+          line-height: 1.1; /* Increased from 1 */
         }
       }
 

@@ -1,0 +1,34 @@
+/* Roboto Font Configuration */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wdth,wght@82.3,406&display=swap");
+
+/* Roboto Font Class */
+.roboto-custom {
+  font-family: "Roboto", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 406;
+  font-style: normal;
+  font-variation-settings: "wdth" 82.3;
+}
+
+/* Apply Roboto as default body font */
+body {
+  font-family: "Roboto", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 406;
+  font-style: normal;
+  font-variation-settings: "wdth" 82.3;
+}
+
+/* Override any existing font families */
+* {
+  font-family: inherit;
+}
+
+/* Ensure form elements inherit the font */
+input, textarea, select, button {
+  font-family: inherit;
+  font-optical-sizing: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  font-variation-settings: inherit;
+}
