@@ -70,7 +70,7 @@ class LoginPage {
         extensionMsg.className = 'extension-message';
         extensionMsg.innerHTML = `
             <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: #0369a1;">
-                🔗 Connected from PaperFy Extension
+                🔗 Connected from StepDoc Extension
             </div>
         `;
         authHeader.appendChild(extensionMsg);
@@ -299,13 +299,13 @@ class LoginPage {
             
             // Also try postMessage for cross-tab communication
             window.parent.postMessage({
-                type: 'PAPERFY_AUTH_SUCCESS',
+                type: 'STEPDOC_AUTH_SUCCESS',
                 userData: userData
             }, '*');
             
             // Store in localStorage for the extension to pick up
-            localStorage.setItem('paperfy_user_data', JSON.stringify(userData));
-            localStorage.setItem('paperfy_auth_timestamp', Date.now().toString());
+            localStorage.setItem('stepdoc_user_data', JSON.stringify(userData));
+            localStorage.setItem('stepdoc_auth_timestamp', Date.now().toString());
             
         } catch (error) {
             console.log('Extension communication not available:', error);
@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Listen for messages from the extension
 window.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'PAPERFY_AUTH_REQUEST') {
+    if (event.data && event.data.type === 'STEPDOC_AUTH_REQUEST') {
         // Handle authentication request from extension
         console.log('Auth request received from extension');
     }
