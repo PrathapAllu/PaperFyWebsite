@@ -292,13 +292,17 @@ body {
     right: 0;
     height: 1px;
     background: #e1e5e9;
+    transform: translateY(-50%);
 }
 
 .divider-text {
+    position: relative;
     background: white;
     padding: 0 1rem;
     color: #666;
     font-size: 0.85rem;
+    display: inline-block;
+    z-index: 1;
 }
 
 .social-buttons {
@@ -398,4 +402,126 @@ body {
 
 .auth-btn.loading .btn-loader {
     display: block;
+}
+
+/* Enhanced Validation Styles */
+.form-input.error {
+    border-color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.05);
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+}
+
+.form-input.success {
+    border-color: #27ae60;
+    background-color: rgba(39, 174, 96, 0.05);
+    box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+}
+
+.field-error {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    animation: slideIn 0.3s ease;
+}
+
+.field-error::before {
+    content: "⚠️";
+    margin-right: 0.5rem;
+}
+
+/* Enhanced Message Styles */
+.auth-message {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid;
+    animation: slideIn 0.3s ease;
+}
+
+.error-message {
+    background-color: rgba(231, 76, 60, 0.1);
+    border-left-color: #e74c3c;
+    color: #c0392b;
+}
+
+.success-message {
+    background-color: rgba(39, 174, 96, 0.1);
+    border-left-color: #27ae60;
+    color: #27ae60;
+}
+
+.info-message {
+    background-color: rgba(52, 152, 219, 0.1);
+    border-left-color: #3498db;
+    color: #2980b9;
+}
+
+.message-content {
+    display: flex;
+    align-items: center;
+}
+
+.message-icon {
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.message-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+/* Enhanced Button Loading */
+.btn-loader {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhanced Form Focus States */
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    background-color: rgba(255, 255, 255, 1);
+}
+
+/* Improved Responsive Design */
+@media (max-width: 480px) {
+    .auth-message {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .field-error {
+        font-size: 0.8rem;
+    }
+    
+    .message-icon {
+        font-size: 1rem;
+    }
 }

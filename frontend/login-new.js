@@ -48,32 +48,22 @@ class LoginPage {
         this.googleBtn.addEventListener('click', () => this.handleSocialLogin('google'));
         this.githubBtn.addEventListener('click', () => this.handleSocialLogin('github'));
         
-        // Input validation
+        // Real-time validation
+        this.loginEmail.addEventListener('input', () => this.validateEmail(this.loginEmail));
+        this.signupEmail.addEventListener('input', () => this.validateEmail(this.signupEmail));
         this.signupPassword.addEventListener('input', () => this.validatePassword());
-        this.confirmPassword.addEventListener('input', () => this.validatePassword());
+        this.confirmPassword.addEventListener('input', () => this.validatePasswordMatch());
     }
 
     checkExtensionConnection() {
-        // Check if user came from the extension
+        // Check if this page was opened by a browser extension
         const urlParams = new URLSearchParams(window.location.search);
-        const fromExtension = urlParams.get('from_extension');
+        const fromExtension = urlParams.get('from') === 'extension';
         
         if (fromExtension) {
-            this.showExtensionMessage();
+            console.log('Opened from browser extension');
+            // Add visual indicator or modify behavior for extension users
         }
-    }
-
-    showExtensionMessage() {
-        // Add a message indicating the user came from the extension
-        const authHeader = document.querySelector('.auth-header');
-        const extensionMsg = document.createElement('div');
-        extensionMsg.className = 'extension-message';
-        extensionMsg.innerHTML = `
-            <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: #0369a1;">
-                🔗 Connected from StepDoc Extension
-            </div>
-        `;
-        authHeader.appendChild(extensionMsg);
     }
 
     toggleForms() {
@@ -120,21 +110,26 @@ class LoginPage {
         this.setLoadingState(submitBtn, true);
         
         try {
-            // Simulate API call (replace with actual authentication)
-            const userData = await this.authenticateUser(email, password, rememberMe);
+            // Use auth service for login
+            const result = await authService.signIn(email, password);
             
-            if (userData.success) {
-                this.showSuccess('Login successful!');
+            if (result.success) {
+                this.showSuccess(result.message || 'Login successful!');
+                
+                // Store user data if remember me is checked
+                if (rememberMe && result.data) {
+                    localStorage.setItem('stepdoc_user', JSON.stringify(result.data));
+                }
                 
                 // Send data back to extension if available
-                this.sendToExtension(userData.user);
+                this.sendToExtension(result.data);
                 
                 // Redirect after a short delay
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 1500);
             } else {
-                this.showError(userData.error || 'Login failed');
+                this.showError(result.message || 'Login failed');
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -184,21 +179,22 @@ class LoginPage {
         this.setLoadingState(submitBtn, true);
         
         try {
-            // Simulate API call (replace with actual registration)
-            const userData = await this.registerUser(name, email, password);
+            // Use auth service for signup
+            const result = await authService.signUp(email, password, name);
             
-            if (userData.success) {
-                this.showSuccess('Account created successfully!');
+            if (result.success) {
+                this.showSuccess(result.message || 'Account created successfully!');
                 
                 // Send data back to extension if available
-                this.sendToExtension(userData.user);
+                this.sendToExtension(result.data);
                 
-                // Redirect after a short delay
+                // Switch to login form after successful signup
                 setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1500);
+                    this.toggleForms();
+                    this.showSuccess('Please check your email to verify your account');
+                }, 2000);
             } else {
-                this.showError(userData.error || 'Registration failed');
+                this.showError(result.message || 'Registration failed');
             }
         } catch (error) {
             console.error('Signup error:', error);
@@ -208,67 +204,69 @@ class LoginPage {
         }
     }
 
-    async authenticateUser(email, password, rememberMe) {
-        // Simulate API call - replace with actual authentication
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // For demo purposes, accept any email/password combination
-                if (email && password) {
-                    resolve({
-                        success: true,
-                        user: {
-                            id: Date.now(),
-                            name: email.split('@')[0],
-                            username: email.split('@')[0],
-                            email: email,
-                            avatar: null
-                        }
-                    });
-                } else {
-                    resolve({
-                        success: false,
-                        error: 'Invalid credentials'
-                    });
-                }
-            }, 1000);
-        });
+    async handleSocialLogin(provider) {
+        try {
+            let result;
+            if (provider === 'google') {
+                result = await authService.signInWithGoogle();
+            } else if (provider === 'github') {
+                result = await authService.signInWithGitHub();
+            }
+            
+            if (result && result.success) {
+                this.showSuccess(result.message);
+            } else {
+                this.showError('Social login failed');
+            }
+        } catch (error) {
+            console.error('Social login error:', error);
+            this.showError('Social login failed');
+        }
     }
 
-    async registerUser(name, email, password) {
-        // Simulate API call - replace with actual registration
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve({
-                    success: true,
-                    user: {
-                        id: Date.now(),
-                        name: name,
-                        username: email.split('@')[0],
-                        email: email,
-                        avatar: null
-                    }
-                });
-            }, 1000);
-        });
-    }
-
-    handleSocialLogin(provider) {
-        // Implement social login functionality
-        console.log(`Social login with ${provider}`);
-        this.showError(`${provider} login not implemented yet`);
+    validateEmail(emailInput) {
+        const email = emailInput.value.trim();
+        const isValid = this.isValidEmail(email);
+        
+        if (email && !isValid) {
+            emailInput.classList.add('invalid');
+        } else {
+            emailInput.classList.remove('invalid');
+        }
+        
+        return isValid;
     }
 
     validatePassword() {
         const password = this.signupPassword.value;
-        const confirmPassword = this.confirmPassword.value;
+        const isValid = password.length >= 6;
         
-        if (confirmPassword && password !== confirmPassword) {
-            this.confirmPassword.classList.add('error');
-            this.confirmPassword.classList.remove('success');
-        } else if (confirmPassword) {
-            this.confirmPassword.classList.remove('error');
-            this.confirmPassword.classList.add('success');
+        if (password && !isValid) {
+            this.signupPassword.classList.add('invalid');
+        } else {
+            this.signupPassword.classList.remove('invalid');
         }
+        
+        // Also validate password match if confirm password has value
+        if (this.confirmPassword.value) {
+            this.validatePasswordMatch();
+        }
+        
+        return isValid;
+    }
+
+    validatePasswordMatch() {
+        const password = this.signupPassword.value;
+        const confirmPassword = this.confirmPassword.value;
+        const isMatch = password === confirmPassword;
+        
+        if (confirmPassword && !isMatch) {
+            this.confirmPassword.classList.add('invalid');
+        } else {
+            this.confirmPassword.classList.remove('invalid');
+        }
+        
+        return isMatch;
     }
 
     isValidEmail(email) {
@@ -279,108 +277,97 @@ class LoginPage {
     setLoadingState(button, loading) {
         if (loading) {
             button.disabled = true;
+            button.textContent = 'Loading...';
             button.classList.add('loading');
         } else {
             button.disabled = false;
+            button.textContent = button.dataset.originalText || (this.isLoginMode ? 'Sign In' : 'Sign Up');
             button.classList.remove('loading');
         }
     }
 
     sendToExtension(userData) {
-        // Try to send data back to the Chrome extension
+        // Send authentication data back to browser extension
         try {
-            // Check if we're in a Chrome extension context
-            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-                chrome.runtime.sendMessage({
-                    messageType: 'authCallback',
+            if (window.chrome && window.chrome.runtime) {
+                window.chrome.runtime.sendMessage({
+                    type: 'AUTH_SUCCESS',
                     userData: userData
                 });
             }
             
-            // Also try postMessage for cross-tab communication
-            window.parent.postMessage({
-                type: 'STEPDOC_AUTH_SUCCESS',
-                userData: userData
-            }, '*');
+            // Also try posting to parent window (for popup scenarios)
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'AUTH_SUCCESS',
+                    userData: userData
+                }, '*');
+            }
             
-            // Store in localStorage for the extension to pick up
-            localStorage.setItem('stepdoc_user_data', JSON.stringify(userData));
-            localStorage.setItem('stepdoc_auth_timestamp', Date.now().toString());
-            
+            console.log('Authentication data sent to extension:', userData);
         } catch (error) {
-            console.log('Extension communication not available:', error);
+            console.warn('Could not send data to extension:', error);
         }
     }
 
     showError(message) {
+        // Remove any existing error messages
         this.clearErrors();
         
+        // Create error element
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error-message';
         errorDiv.textContent = message;
-        errorDiv.style.cssText = `
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #dc2626;
-            padding: 0.75rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-        `;
         
+        // Insert at the top of the current form
         const activeForm = this.isLoginMode ? this.loginForm : this.signupForm;
         activeForm.insertBefore(errorDiv, activeForm.firstChild);
         
         // Auto-remove after 5 seconds
         setTimeout(() => {
             if (errorDiv.parentNode) {
-                errorDiv.remove();
+                errorDiv.parentNode.removeChild(errorDiv);
             }
         }, 5000);
     }
 
     showSuccess(message) {
+        // Remove any existing messages
         this.clearErrors();
         
+        // Create success element
         const successDiv = document.createElement('div');
         successDiv.className = 'success-message';
         successDiv.textContent = message;
-        successDiv.style.cssText = `
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #16a34a;
-            padding: 0.75rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-        `;
         
+        // Insert at the top of the current form
         const activeForm = this.isLoginMode ? this.loginForm : this.signupForm;
         activeForm.insertBefore(successDiv, activeForm.firstChild);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.parentNode.removeChild(successDiv);
+            }
+        }, 3000);
     }
 
     clearErrors() {
-        // Remove existing error/success messages
+        // Remove all error and success messages
         const messages = document.querySelectorAll('.error-message, .success-message');
-        messages.forEach(msg => msg.remove());
-        
-        // Clear input error states
-        const inputs = document.querySelectorAll('.form-input');
-        inputs.forEach(input => {
-            input.classList.remove('error', 'success');
+        messages.forEach(msg => {
+            if (msg.parentNode) {
+                msg.parentNode.removeChild(msg);
+            }
         });
+        
+        // Remove invalid styling from inputs
+        const invalidInputs = document.querySelectorAll('.invalid');
+        invalidInputs.forEach(input => input.classList.remove('invalid'));
     }
 }
 
-// Initialize the login page
+// Initialize the login page when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new LoginPage();
-});
-
-// Listen for messages from the extension
-window.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'STEPDOC_AUTH_REQUEST') {
-        // Handle authentication request from extension
-        console.log('Auth request received from extension');
-    }
 });
