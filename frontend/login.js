@@ -52,11 +52,22 @@ class LoginPage {
         // Check for messages passed via URL (e.g., from signup page)
         const urlParams = new URLSearchParams(window.location.search);
         const message = urlParams.get('message');
+        const email = urlParams.get('email');
         
         if (message) {
+            // Show a cleaner message for redirected users
             this.showSuccess(decodeURIComponent(message));
-            // Clean URL
+            // Clean URL immediately to avoid persistence
             window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
+        // Pre-fill email if provided
+        if (email && this.loginEmail) {
+            this.loginEmail.value = decodeURIComponent(email);
+            // Focus on password field if email is pre-filled
+            if (this.loginPassword) {
+                this.loginPassword.focus();
+            }
         }
     }
 
@@ -241,6 +252,8 @@ class LoginPage {
         
         const successDiv = document.createElement('div');
         successDiv.className = 'success-message';
+        successDiv.style.cursor = 'pointer';
+        successDiv.title = 'Click to dismiss';
         successDiv.innerHTML = `
             <div style="
                 background: #f0fdf4; 
@@ -252,21 +265,32 @@ class LoginPage {
                 color: #15803d;
                 display: flex;
                 align-items: center;
+                justify-content: space-between;
                 gap: 0.5rem;
             ">
-                <span style="font-size: 1.1rem;">✅</span>
-                ${message}
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.1rem;">✅</span>
+                    ${message}
+                </div>
+                <span style="font-size: 0.8rem; opacity: 0.7;">×</span>
             </div>
         `;
         
+        // Allow clicking to dismiss
+        successDiv.addEventListener('click', () => {
+            if (successDiv.parentNode) {
+                successDiv.remove();
+            }
+        });
+        
         this.loginForm.insertBefore(successDiv, this.loginForm.firstChild);
         
-        // Auto-remove after 5 seconds
+        // Auto-remove after 3 seconds (faster for redirect messages)
         setTimeout(() => {
             if (successDiv.parentNode) {
                 successDiv.remove();
             }
-        }, 5000);
+        }, 3000);
     }
 
     clearErrors() {

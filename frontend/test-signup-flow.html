@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Signup Flow</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin-bottom: 30px; padding: 20px; border: 1px solid #ccc; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; }
+        .error { background: #ffe6e6; border-left: 4px solid #ff0000; }
+        .success { background: #e6ffe6; border-left: 4px solid #00ff00; }
+        .info { background: #e6f3ff; border-left: 4px solid #0066cc; }
+        input, button { margin: 5px; padding: 8px; }
+        button { background: #007cba; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005a8a; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Signup Flow for User Existence</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Try to signup with a test email</h2>
+        <input type="email" id="testEmail" placeholder="Enter test email" value="test@example.com">
+        <input type="password" id="testPassword" placeholder="Enter password" value="password123">
+        <br>
+        <button onclick="testSignup()">Test Signup</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+        <div id="logs"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Check User Existence (No Emails Sent)</h2>
+        <input type="email" id="checkEmail" placeholder="Enter email to check" value="test@example.com">
+        <button onclick="testUserExists()">Check if User Exists</button>
+        <p style="font-size: 12px; color: #666;">This test uses sign-in attempt with dummy password - no verification emails are sent.</p>
+        <div id="existsLogs"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Check Authentication Service</h2>
+        <button onclick="testAuthService()">Test Auth Service</button>
+        <div id="authLogs"></div>
+    </div>
+
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://bqemaogpiunlbdhzvlyd.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxZW1hb2dwaXVubGJkaHp2bHlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MTcwMTIsImV4cCI6MjA3MTM5MzAxMn0.TvzBF6pdrfAOLZUDISvebqYR71zKkZOX-jDlTvOMBQg';
+        
+        // Store the Supabase library reference and create client
+        window.supabaseLib = window.supabase;
+        window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+        window.supabase = window.supabaseLib;
+        window.supabase.client = window.supabaseClient;
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logDiv);
+            console.log(message);
+        }
+
+        function existsLog(message, type = 'info') {
+            const logsDiv = document.getElementById('existsLogs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logDiv);
+            console.log(message);
+        }
+
+        function authLog(message, type = 'info') {
+            const logsDiv = document.getElementById('authLogs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logDiv);
+            console.log(message);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testSignup() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            log(`🔍 Testing signup with email: ${email}`, 'info');
+            
+            try {
+                const { data, error } = await window.supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: 'Test User'
+                        }
+                    }
+                });
+                
+                if (error) {
+                    log(`❌ Signup Error: ${error.message}`, 'error');
+                    log(`❌ Error Status: ${error.status}`, 'error');
+                    log(`❌ Error Code: ${error.code}`, 'error');
+                    log(`❌ Full Error: ${JSON.stringify(error, null, 2)}`, 'error');
+                    
+                    // Test our detection logic
+                    if (error.message.includes('User already registered') || 
+                        error.message.includes('already registered') ||
+                        error.message.includes('already exists') ||
+                        error.message.includes('duplicate') ||
+                        error.message.includes('Email already confirmed') ||
+                        error.message.includes('Account already exists') ||
+                        error.code === 'user_already_exists' ||
+                        error.status === 422 ||
+                        error.status === 409) {
+                        log('✅ Our detection logic would catch this as existing user!', 'success');
+                    } else {
+                        log('⚠️ Our detection logic would NOT catch this as existing user', 'error');
+                    }
+                } else {
+                    log(`✅ Signup Success!`, 'success');
+                    log(`✅ User ID: ${data.user?.id}`, 'success');
+                    log(`✅ Email confirmed: ${data.user?.email_confirmed_at ? 'Yes' : 'No'}`, 'info');
+                    log(`✅ Full Data: ${JSON.stringify(data, null, 2)}`, 'info');
+                }
+                
+            } catch (catchError) {
+                log(`❌ Caught Exception: ${catchError.message}`, 'error');
+                log(`❌ Full Catch Error: ${JSON.stringify(catchError, null, 2)}`, 'error');
+            }
+        }
+
+        async function testUserExists() {
+            const email = document.getElementById('checkEmail').value;
+            existsLog(`🔍 Testing user existence for: ${email} (no emails sent)`, 'info');
+            
+            try {
+                const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: 'dummy_check_password_12345_invalid'
+                });
+                
+                if (error) {
+                    existsLog(`❌ Sign-in Error: ${error.message}`, 'error');
+                    
+                    const errorMessage = error.message.toLowerCase();
+                    if (errorMessage.includes('invalid login credentials') || 
+                        errorMessage.includes('email not confirmed') ||
+                        errorMessage.includes('invalid email or password')) {
+                        existsLog('✅ User EXISTS (got invalid credentials error)', 'success');
+                    } else if (errorMessage.includes('user not found') ||
+                              errorMessage.includes('email not found') ||
+                              errorMessage.includes('no user found')) {
+                        existsLog('✅ User does NOT exist', 'success');
+                    } else {
+                        existsLog('⚠️ User might exist (unclear error)', 'info');
+                    }
+                } else {
+                    existsLog('✅ User EXISTS (unexpected sign-in success)', 'success');
+                }
+                
+            } catch (catchError) {
+                existsLog(`❌ Caught Exception: ${catchError.message}`, 'error');
+            }
+        }
+
+        async function testAuthService() {
+            authLog('🔍 Testing if auth service is available...', 'info');
+            
+            // Test if authService is available
+            if (typeof authService !== 'undefined') {
+                authLog('✅ authService is available', 'success');
+                
+                try {
+                    // Test user existence check
+                    const email = 'test@example.com';
+                    authLog(`🔍 Testing checkUserExists for: ${email}`, 'info');
+                    const existsResult = await authService.checkUserExists(email);
+                    authLog(`📤 User Exists Result: ${JSON.stringify(existsResult, null, 2)}`, 'info');
+                    
+                    // Test signup
+                    authLog(`🔍 Testing signup for: test2@example.com`, 'info');
+                    const result = await authService.signUp('test2@example.com', 'password123', {full_name: 'Test User 2'});
+                    authLog(`📤 Auth Service Signup Result: ${JSON.stringify(result, null, 2)}`, 'info');
+                    
+                } catch (error) {
+                    authLog(`❌ Auth service error: ${error.message}`, 'error');
+                }
+            } else {
+                authLog('❌ authService is not available! Need to load auth.js', 'error');
+            }
+        }
+    </script>
+    
+    <!-- Load auth service -->
+    <script src="auth.js"></script>
+    
+    <script>
+        // Initialize auth service
+        if (typeof AuthService !== 'undefined') {
+            window.authService = new AuthService();
+            authLog('✅ AuthService initialized', 'success');
+        } else {
+            authLog('❌ AuthService class not found', 'error');
+        }
+    </script>
+</body>
+</html>

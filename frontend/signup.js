@@ -301,9 +301,32 @@ class SignupPage {
         try {
             this.setLoadingState(true);
             
-            // Use auth service for signup
+            // First check if user already exists (silent check - no emails sent)
+            console.log('🔍 Checking if user exists before signup...');
+            const userExistsCheck = await authService.checkUserExists(userData.email);
+            
+            if (userExistsCheck.exists) {
+                console.log('✅ User already exists, redirecting to login');
+                this.setLoadingState(false);
+                this.showMessage('Account already exists. Redirecting to login...', 'info');
+                
+                // Redirect to login page after 1.5 seconds (shorter delay)
+                setTimeout(() => {
+                    window.location.href = `login.html?message=Account already exists. Please sign in.&email=${encodeURIComponent(userData.email)}`;
+                }, 1500);
+                return;
+            }
+            
+            console.log('✅ User does not exist, proceeding with signup');
+            
+            // Try to sign up - user doesn't exist
             const result = await authService.signUp(userData.email, userData.password, userData.options.data);
             
+            console.log('🔍 Signup result:', result);
+            console.log('🔍 Success:', result.success);
+            console.log('🔍 Message:', result.message);
+            
+            // Handle signup result
             if (result.success) {
                 this.showMessage('Account created successfully! Please check your email to verify your account.', 'success');
                 
@@ -318,6 +341,7 @@ class SignupPage {
                 }, 3000);
                 
             } else {
+                // Signup failed for other reasons
                 this.showMessage(result.message || 'Failed to create account. Please try again.', 'error');
             }
             

@@ -37,6 +37,55 @@ class AuthService {
         throw new Error('Supabase client not available');
     }
 
+    // Check if user exists without sending any emails
+    async checkUserExists(email) {
+        try {
+            await this.waitForSupabase();
+            const supabase = this.getSupabaseClient();
+            
+            console.log('🔍 Checking if user exists (silent check):', email);
+            
+            // Use a different approach - try to sign in with a dummy password
+            // This will fail but tell us if the user exists without sending emails
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: 'dummy_check_password_12345_invalid'
+            });
+            
+            if (error) {
+                // Analyze the error to determine if user exists
+                const errorMessage = error.message.toLowerCase();
+                
+                if (errorMessage.includes('invalid login credentials') || 
+                    errorMessage.includes('email not confirmed') ||
+                    errorMessage.includes('invalid email or password')) {
+                    // These errors indicate the user exists but credentials are wrong
+                    console.log('✅ User exists (invalid credentials error)');
+                    return { exists: true };
+                } else if (errorMessage.includes('user not found') ||
+                          errorMessage.includes('email not found') ||
+                          errorMessage.includes('no user found')) {
+                    // These errors indicate user doesn't exist
+                    console.log('❌ User does not exist');
+                    return { exists: false };
+                } else {
+                    // For unclear errors, assume user might exist (safer approach)
+                    console.log('⚠️ Unclear error, assuming user exists for safety:', error.message);
+                    return { exists: true };
+                }
+            }
+            
+            // If no error (very unlikely with dummy password), user exists
+            console.log('✅ User exists (unexpected success)');
+            return { exists: true };
+            
+        } catch (error) {
+            console.error('❌ Error checking user existence:', error);
+            // Default to assuming user doesn't exist in case of network/other errors
+            return { exists: false };
+        }
+    }
+
     // Sign up new user
     async signUp(email, password, metadata = {}) {
         try {
