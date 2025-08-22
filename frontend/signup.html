@@ -60,28 +60,44 @@
                 </div>
 
                 <form id="signupForm" class="signup-form">
-                    <!-- Name Field -->
-                    <div class="form-group">
-                        <label for="fullName" class="form-label">Full Name</label>
-                        <div class="input-container">
-                            <span class="input-icon">👤</span>
-                            <input 
-                                type="text" 
-                                id="fullName" 
-                                name="fullName" 
-                                class="form-input" 
-                                placeholder="Enter your full name"
-                                required
-                            >
+                    <!-- Name Fields -->
+                    <div class="form-group name-group">
+                        <div class="name-fields">
+                            <div class="name-field">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <div class="input-container">
+                                    <input 
+                                        type="text" 
+                                        id="firstName" 
+                                        name="firstName" 
+                                        class="form-input" 
+                                        placeholder="Enter your first name"
+                                        required
+                                    >
+                                </div>
+                                <div class="validation-message" id="firstNameValidation"></div>
+                            </div>
+                            <div class="name-field">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <div class="input-container">
+                                    <input 
+                                        type="text" 
+                                        id="lastName" 
+                                        name="lastName" 
+                                        class="form-input" 
+                                        placeholder="Enter your last name"
+                                        required
+                                    >
+                                </div>
+                                <div class="validation-message" id="lastNameValidation"></div>
+                            </div>
                         </div>
-                        <div class="validation-message" id="nameValidation"></div>
                     </div>
 
                     <!-- Email Field -->
                     <div class="form-group">
                         <label for="email" class="form-label">Email Address</label>
                         <div class="input-container">
-                            <span class="input-icon">📧</span>
                             <input 
                                 type="email" 
                                 id="email" 
@@ -98,7 +114,6 @@
                     <div class="form-group">
                         <label for="phone" class="form-label">Phone Number</label>
                         <div class="input-container">
-                            <span class="input-icon">📱</span>
                             <input 
                                 type="tel" 
                                 id="phone" 
@@ -115,7 +130,6 @@
                     <div class="form-group">
                         <label for="password" class="form-label">Password</label>
                         <div class="input-container">
-                            <span class="input-icon">🔒</span>
                             <input 
                                 type="password" 
                                 id="password" 
@@ -125,7 +139,10 @@
                                 required
                             >
                             <button type="button" class="toggle-password" id="togglePassword">
-                                <span class="eye-icon">👁️</span>
+                                <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
                             </button>
                         </div>
                         <div class="password-strength" id="passwordStrength">
@@ -141,7 +158,6 @@
                     <div class="form-group">
                         <label for="confirmPassword" class="form-label">Confirm Password</label>
                         <div class="input-container">
-                            <span class="input-icon">🔒</span>
                             <input 
                                 type="password" 
                                 id="confirmPassword" 
@@ -151,7 +167,10 @@
                                 required
                             >
                             <button type="button" class="toggle-password" id="toggleConfirmPassword">
-                                <span class="eye-icon">👁️</span>
+                                <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
                             </button>
                         </div>
                         <div class="validation-message" id="confirmPasswordValidation"></div>

@@ -15,7 +15,8 @@ class SignupPage {
         this.signupForm = document.getElementById('signupForm');
         
         // Form inputs
-        this.fullName = document.getElementById('fullName');
+        this.firstName = document.getElementById('firstName');
+        this.lastName = document.getElementById('lastName');
         this.email = document.getElementById('email');
         this.phone = document.getElementById('phone');
         this.password = document.getElementById('password');
@@ -31,7 +32,8 @@ class SignupPage {
         this.toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
         
         // Validation elements
-        this.nameValidation = document.getElementById('nameValidation');
+        this.firstNameValidation = document.getElementById('firstNameValidation');
+        this.lastNameValidation = document.getElementById('lastNameValidation');
         this.emailValidation = document.getElementById('emailValidation');
         this.phoneValidation = document.getElementById('phoneValidation');
         this.passwordValidation = document.getElementById('passwordValidation');
@@ -79,7 +81,8 @@ class SignupPage {
 
     setupValidation() {
         // Real-time validation
-        this.fullName.addEventListener('input', () => this.validateName());
+        this.firstName.addEventListener('input', () => this.validateFirstName());
+        this.lastName.addEventListener('input', () => this.validateLastName());
         this.email.addEventListener('input', () => this.validateEmail());
         this.phone.addEventListener('input', () => this.validatePhone());
         this.password.addEventListener('input', () => {
@@ -90,7 +93,8 @@ class SignupPage {
         this.confirmPassword.addEventListener('input', () => this.validateConfirmPassword());
         
         // Focus events
-        this.fullName.addEventListener('focus', () => this.clearValidation('name'));
+        this.firstName.addEventListener('focus', () => this.clearValidation('firstName'));
+        this.lastName.addEventListener('focus', () => this.clearValidation('lastName'));
         this.email.addEventListener('focus', () => this.clearValidation('email'));
         this.phone.addEventListener('focus', () => this.clearValidation('phone'));
         this.password.addEventListener('focus', () => this.clearValidation('password'));
@@ -98,18 +102,34 @@ class SignupPage {
     }
 
     // Validation Methods
-    validateName() {
-        const name = this.fullName.value.trim();
-        const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+    validateFirstName() {
+        const firstName = this.firstName.value.trim();
+        const nameRegex = /^[a-zA-Z]{2,25}$/;
         
-        if (!name) {
-            this.setValidation('name', '', 'none');
+        if (!firstName) {
+            this.setValidation('firstName', '', 'none');
             return false;
-        } else if (!nameRegex.test(name)) {
-            this.setValidation('name', 'Please enter a valid name (2-50 characters, letters only)', 'error');
+        } else if (!nameRegex.test(firstName)) {
+            this.setValidation('firstName', 'Please enter a valid first name (2-25 characters, letters only)', 'error');
             return false;
         } else {
-            this.setValidation('name', 'Looks good!', 'success');
+            this.setValidation('firstName', 'Looks good!', 'success');
+            return true;
+        }
+    }
+
+    validateLastName() {
+        const lastName = this.lastName.value.trim();
+        const nameRegex = /^[a-zA-Z]{2,25}$/;
+        
+        if (!lastName) {
+            this.setValidation('lastName', '', 'none');
+            return false;
+        } else if (!nameRegex.test(lastName)) {
+            this.setValidation('lastName', 'Please enter a valid last name (2-25 characters, letters only)', 'error');
+            return false;
+        } else {
+            this.setValidation('lastName', 'Looks good!', 'success');
             return true;
         }
     }
@@ -230,7 +250,7 @@ class SignupPage {
 
     setValidation(field, message, type) {
         const validationElement = document.getElementById(`${field}Validation`);
-        const inputElement = document.getElementById(field === 'name' ? 'fullName' : field);
+        const inputElement = document.getElementById(field);
         
         validationElement.textContent = message;
         validationElement.className = `validation-message ${type}`;
@@ -268,7 +288,8 @@ class SignupPage {
         e.preventDefault();
         
         // Validate all fields
-        const isNameValid = this.validateName();
+        const isFirstNameValid = this.validateFirstName();
+        const isLastNameValid = this.validateLastName();
         const isEmailValid = this.validateEmail();
         const isPhoneValid = this.validatePhone();
         const isPasswordValid = this.validatePassword();
@@ -280,7 +301,7 @@ class SignupPage {
             return;
         }
         
-        if (!isNameValid || !isEmailValid || !isPhoneValid || !isPasswordValid || !isConfirmPasswordValid) {
+        if (!isFirstNameValid || !isLastNameValid || !isEmailValid || !isPhoneValid || !isPasswordValid || !isConfirmPasswordValid) {
             this.showMessage('Please fix all validation errors before submitting', 'error');
             return;
         }
@@ -291,7 +312,9 @@ class SignupPage {
             password: this.password.value,
             options: {
                 data: {
-                    full_name: this.fullName.value.trim(),
+                    full_name: `${this.firstName.value.trim()} ${this.lastName.value.trim()}`,
+                    first_name: this.firstName.value.trim(),
+                    last_name: this.lastName.value.trim(),
                     phone: this.phone.value.trim(),
                     newsletter_subscription: this.newsletter.checked
                 }
@@ -380,7 +403,7 @@ class SignupPage {
     }
 
     clearAllValidations() {
-        const fields = ['name', 'email', 'phone', 'password', 'confirmPassword'];
+        const fields = ['firstName', 'lastName', 'email', 'phone', 'password', 'confirmPassword'];
         fields.forEach(field => this.clearValidation(field));
     }
 

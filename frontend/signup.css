@@ -225,6 +225,50 @@ body {
     margin-bottom: 20px;
 }
 
+/* Name fields side by side */
+.name-group {
+    margin-bottom: 20px;
+}
+
+.name-fields {
+    display: flex;
+    gap: 15px;
+}
+
+.name-field {
+    flex: 1;
+}
+
+.name-field .form-label {
+    display: block;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+    font-size: 0.875rem;
+}
+
+.name-field .input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.name-field .validation-message {
+    margin-top: 4px;
+}
+
+/* Responsive design for name fields */
+@media (max-width: 480px) {
+    .name-fields {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .name-field {
+        flex: none;
+    }
+}
+
 .form-label {
     display: block;
     font-weight: 500;
