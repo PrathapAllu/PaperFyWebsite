@@ -383,7 +383,7 @@ class Dashboard {
     }
 
     redirectToLogin() {
-        window.location.href = '/login.html';
+        window.location.href = 'login.html';
     }
 }
 
@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error('❌ Failed to initialize dashboard:', error);
         console.error('Error details:', error);
-        window.location.href = '/login.html';
+        window.location.href = 'login.html';
     }
 });
 

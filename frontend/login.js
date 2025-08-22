@@ -110,7 +110,7 @@ class LoginPage {
                 
                 // Redirect after a short delay
                 setTimeout(() => {
-                    window.location.href = '/dashboard.html';
+                    window.location.href = 'dashboard.html';
                 }, 1500);
             } else {
                 this.showError(result.message || 'Login failed');
@@ -138,7 +138,7 @@ class LoginPage {
                 
                 // Redirect after a short delay
                 setTimeout(() => {
-                    window.location.href = '/dashboard.html';
+                    window.location.href = 'dashboard.html';
                 }, 1500);
             } else {
                 this.showError(result.message || `Failed to login with ${provider}`);
