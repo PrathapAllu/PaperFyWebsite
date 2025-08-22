@@ -110,7 +110,7 @@ class LoginPage {
                 
                 // Redirect after a short delay
                 setTimeout(() => {
-                    window.location.href = 'dashboard.html';
+                    window.location.href = '/dashboard.html';
                 }, 1500);
             } else {
                 this.showError(result.message || 'Login failed');
@@ -138,7 +138,7 @@ class LoginPage {
                 
                 // Redirect after a short delay
                 setTimeout(() => {
-                    window.location.href = 'dashboard.html';
+                    window.location.href = '/dashboard.html';
                 }, 1500);
             } else {
                 this.showError(result.message || `Failed to login with ${provider}`);
@@ -160,11 +160,11 @@ class LoginPage {
         
         if (loading) {
             btnText.style.display = 'none';
-            btnLoader.classList.remove('hidden');
+            btnLoader.style.display = 'flex';
             button.disabled = true;
         } else {
             btnText.style.display = 'inline';
-            btnLoader.classList.add('hidden');
+            btnLoader.style.display = 'none';
             button.disabled = false;
         }
     }
@@ -279,23 +279,59 @@ class LoginPage {
 }
 
 // Initialize login page when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Initializing login page...');
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Initializing login page...');
     
-    // Initialize Supabase first
-    if (typeof supabase === 'undefined') {
-        console.error('Supabase not loaded');
+    try {
+        // Wait for services to be available with more detailed logging
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        console.log('⏳ Waiting for services to load...');
+        
+        while (attempts < maxAttempts) {
+            // Check Supabase
+            const supabaseAvailable = typeof window.supabase !== 'undefined' && 
+                                    typeof window.supabase.createClient === 'function';
+            
+            // Check AuthService
+            const authServiceAvailable = typeof authService !== 'undefined' && 
+                                       typeof authService.waitForSupabase === 'function';
+            
+            console.log(`Attempt ${attempts + 1}: Supabase=${supabaseAvailable}, AuthService=${authServiceAvailable}`);
+            
+            if (supabaseAvailable && authServiceAvailable) {
+                console.log('✅ All services loaded successfully');
+                break;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (attempts >= maxAttempts) {
+            console.error('❌ Services not available after 5 seconds');
+            throw new Error('Services not available after waiting');
+        }
+        
+        // Wait for Supabase to be properly initialized
+        console.log('⏳ Waiting for Supabase initialization...');
+        await authService.waitForSupabase();
+        
+        // Test the connection
+        console.log('🔍 Testing Supabase connection...');
+        const connectionTest = await authService.testSupabaseConnection();
+        if (!connectionTest) {
+            throw new Error('Supabase connection test failed');
+        }
+        
+        // Initialize login page
+        new LoginPage();
+        console.log('✅ Login page initialized successfully');
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize login page:', error);
+        console.error('Error details:', error);
         alert('Authentication service not available. Please refresh the page.');
-        return;
     }
-    
-    console.log('✅ Supabase loaded successfully');
-    
-    // Test Supabase connection
-    if (typeof authService !== 'undefined' && authService.testSupabaseConnection) {
-        authService.testSupabaseConnection();
-    }
-    
-    // Initialize login page
-    new LoginPage();
 });

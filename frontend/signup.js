@@ -403,23 +403,61 @@ class SignupPage {
 }
 
 // Initialize signup page when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if Supabase is available
-    if (typeof supabase === 'undefined') {
-        console.error('Supabase not loaded');
-        alert('Authentication service not available. Please refresh the page.');
-        return;
-    }
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Initializing signup page...');
     
-    // Check if auth service is available
-    if (typeof authService === 'undefined') {
-        console.error('Auth service not loaded');
+    try {
+        // Wait for services to be available with more detailed logging
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        console.log('⏳ Waiting for services to load...');
+        
+        while (attempts < maxAttempts) {
+            // Check Supabase
+            const supabaseAvailable = typeof window.supabase !== 'undefined' && 
+                                    typeof window.supabase.createClient === 'function';
+            
+            // Check AuthService
+            const authServiceAvailable = typeof authService !== 'undefined' && 
+                                       typeof authService.waitForSupabase === 'function';
+            
+            console.log(`Attempt ${attempts + 1}: Supabase=${supabaseAvailable}, AuthService=${authServiceAvailable}`);
+            
+            if (supabaseAvailable && authServiceAvailable) {
+                console.log('✅ All services loaded successfully');
+                break;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (attempts >= maxAttempts) {
+            console.error('❌ Services not available after 5 seconds');
+            throw new Error('Services not available after waiting');
+        }
+        
+        // Wait for Supabase to be properly initialized
+        console.log('⏳ Waiting for Supabase initialization...');
+        await authService.waitForSupabase();
+        
+        // Test the connection
+        console.log('🔍 Testing Supabase connection...');
+        const connectionTest = await authService.testSupabaseConnection();
+        if (!connectionTest) {
+            throw new Error('Supabase connection test failed');
+        }
+        
+        // Initialize signup page
+        new SignupPage();
+        console.log('✅ Signup page initialized successfully');
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize signup page:', error);
+        console.error('Error details:', error);
         alert('Authentication service not available. Please refresh the page.');
-        return;
     }
-    
-    // Initialize signup page
-    new SignupPage();
 });
 
 // Handle browser back/forward buttons

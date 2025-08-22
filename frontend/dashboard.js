@@ -24,7 +24,7 @@ class Dashboard {
     async checkAuthStatus() {
         try {
             // Check if user is authenticated with Supabase
-            const { data: { user }, error } = await supabase.auth.getUser();
+            const { data: { user }, error } = await window.supabaseClient.auth.getUser();
             
             if (error || !user) {
                 console.log('No authenticated user found');
@@ -366,7 +366,7 @@ class Dashboard {
 
     async handleLogout() {
         try {
-            const { error } = await supabase.auth.signOut();
+            const { error } = await window.supabaseClient.auth.signOut();
             
             if (error) {
                 console.error('Logout error:', error);
@@ -388,16 +388,54 @@ class Dashboard {
 }
 
 // Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if Supabase is available
-    if (typeof supabase === 'undefined') {
-        console.error('Supabase not loaded');
-        window.location.href = '/login.html';
-        return;
-    }
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Initializing dashboard...');
     
-    // Initialize dashboard
-    new Dashboard();
+    try {
+        // Wait for services to be available with more detailed logging
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        console.log('⏳ Waiting for services to load...');
+        
+        while (attempts < maxAttempts) {
+            // Check Supabase
+            const supabaseAvailable = typeof window.supabase !== 'undefined' && 
+                                    typeof window.supabase.createClient === 'function';
+            
+            // Check AuthService
+            const authServiceAvailable = typeof authService !== 'undefined' && 
+                                       typeof authService.waitForSupabase === 'function';
+            
+            console.log(`Attempt ${attempts + 1}: Supabase=${supabaseAvailable}, AuthService=${authServiceAvailable}`);
+            
+            if (supabaseAvailable && authServiceAvailable) {
+                console.log('✅ All services loaded successfully');
+                break;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (attempts >= maxAttempts) {
+            console.error('❌ Services not available after 5 seconds');
+            throw new Error('Services not available after waiting');
+        }
+        
+        // Wait for Supabase to be properly initialized
+        console.log('⏳ Waiting for Supabase initialization...');
+        await authService.waitForSupabase();
+        
+        // Initialize dashboard
+        new Dashboard();
+        console.log('✅ Dashboard initialized successfully');
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize dashboard:', error);
+        console.error('Error details:', error);
+        window.location.href = '/login.html';
+    }
 });
 
 // Handle browser back/forward buttons

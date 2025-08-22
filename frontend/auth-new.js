@@ -31,8 +31,8 @@ class AuthService {
 
     // Get the current Supabase client
     getSupabaseClient() {
-        if (typeof window !== 'undefined' && window.supabaseClient) {
-            return window.supabaseClient;
+        if (typeof window !== 'undefined' && window.supabase) {
+            return window.supabase;
         }
         throw new Error('Supabase client not available');
     }

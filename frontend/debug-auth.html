@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Authentication</title>
+</head>
+<body>
+    <h1>Debug Authentication Service</h1>
+    <div id="status"></div>
+    <div id="logs"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+
+        function log(message) {
+            console.log(message);
+            logsDiv.innerHTML += '<p>' + message + '</p>';
+        }
+
+        function updateStatus(message, isError = false) {
+            statusDiv.innerHTML = `<p style="color: ${isError ? 'red' : 'green'}">${message}</p>`;
+        }
+
+        // Test 1: Check if Supabase CDN loaded
+        log('🔍 Step 1: Checking Supabase CDN...');
+        if (typeof window.supabase !== 'undefined') {
+            log('✅ Supabase CDN loaded successfully');
+        } else {
+            log('❌ Supabase CDN not loaded');
+            updateStatus('Supabase CDN not loaded', true);
+        }
+
+        // Test 2: Initialize Supabase client
+        log('🔍 Step 2: Initializing Supabase client...');
+        try {
+            const supabaseUrl = 'https://bqemaogpiunlbdhzvlyd.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxZW1hb2dwaXVubGJkaHp2bHlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM4MDQyNzYsImV4cCI6MjA0OTM4MDI3Nn0.5tS2wWgRzwTKKT8bBa3HLOOj98HfpPrIktGWOG9YWfA';
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            window.supabase = supabase;
+            log('✅ Supabase client initialized');
+        } catch (error) {
+            log('❌ Failed to initialize Supabase client: ' + error.message);
+            updateStatus('Failed to initialize Supabase client', true);
+        }
+
+        // Test 3: Load auth.js and check AuthService
+        log('🔍 Step 3: Loading auth.js...');
+        const script = document.createElement('script');
+        script.src = 'auth.js';
+        script.onload = function() {
+            log('✅ auth.js loaded');
+            
+            // Test 4: Check if AuthService is available
+            log('🔍 Step 4: Checking AuthService...');
+            if (typeof AuthService !== 'undefined') {
+                log('✅ AuthService class available');
+            } else {
+                log('❌ AuthService class not available');
+                updateStatus('AuthService class not available', true);
+                return;
+            }
+
+            // Test 5: Check if authService instance is available
+            log('🔍 Step 5: Checking authService instance...');
+            if (typeof authService !== 'undefined') {
+                log('✅ authService instance available');
+            } else {
+                log('❌ authService instance not available');
+                updateStatus('authService instance not available', true);
+                return;
+            }
+
+            // Test 6: Test authService methods
+            log('🔍 Step 6: Testing authService methods...');
+            authService.waitForSupabase().then(() => {
+                log('✅ waitForSupabase() successful');
+                
+                // Test 7: Test connection
+                log('🔍 Step 7: Testing Supabase connection...');
+                return authService.testSupabaseConnection();
+            }).then((result) => {
+                if (result) {
+                    log('✅ Supabase connection test successful');
+                    updateStatus('All authentication services working correctly!');
+                } else {
+                    log('❌ Supabase connection test failed');
+                    updateStatus('Supabase connection test failed', true);
+                }
+            }).catch(error => {
+                log('❌ Authentication service error: ' + error.message);
+                updateStatus('Authentication service error: ' + error.message, true);
+            });
+        };
+        
+        script.onerror = function() {
+            log('❌ Failed to load auth.js');
+            updateStatus('Failed to load auth.js', true);
+        };
+        
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

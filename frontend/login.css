@@ -231,6 +231,12 @@ body {
 }
 
 .btn-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-loader .spinner {
     width: 16px;
     height: 16px;
     border: 2px solid transparent;
