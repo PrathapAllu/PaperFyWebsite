@@ -45,6 +45,7 @@
       href="https://fonts.googleapis.com/css2?family=Roboto:wdth,wght@82.3,406&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="./assets/fonts.css" />
     <script type="module">
       "use strict";
       (() => {
@@ -6756,7 +6757,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
                 <span
                   data-replit-metadata="client/src/components/navigation.tsx:36:12"
                   data-component-name="span"
-                  class="text-xl font-bold text-white"
+                  class="text-3xl font-bold text-white"
                   id="navbar-title"
                   >StepDoc</span
                 >
@@ -6769,28 +6770,28 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
                 <button
                   data-replit-metadata="client/src/components/navigation.tsx:40:12"
                   data-component-name="button"
-                  class="text-white hover:text-yellow-400 transition-colors nav-link"
+                  class="text-white hover:text-yellow-400 transition-colors nav-link text-xl"
                   data-testid="nav-features"
                 >
                   Features</button
                 ><button
                   data-replit-metadata="client/src/components/navigation.tsx:47:12"
                   data-component-name="button"
-                  class="text-white hover:text-yellow-400 transition-colors nav-link"
+                  class="text-white hover:text-yellow-400 transition-colors nav-link text-xl"
                   data-testid="nav-how-it-works"
                 >
                   How It Works</button
                 ><button
                   data-replit-metadata="client/src/components/navigation.tsx:54:12"
                   data-component-name="button"
-                  class="text-white hover:text-yellow-400 transition-colors nav-link"
+                  class="text-white hover:text-yellow-400 transition-colors nav-link text-xl"
                   data-testid="nav-use-cases"
                 >
                   Use Cases</button
                 ><button
                   data-replit-metadata="client/src/components/navigation.tsx:61:12"
                   data-component-name="button"
-                  class="text-white hover:text-yellow-400 transition-colors nav-link"
+                  class="text-white hover:text-yellow-400 transition-colors nav-link text-xl"
                   data-testid="nav-pricing"
                 >
                   Pricing
@@ -6803,7 +6804,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
               >
                 <a
                   href="login.html"
-                  class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-10 px-4 py-2 text-white hover:text-yellow-400 transition-colors nav-link"
+                  class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xl font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-10 px-4 py-2 text-white hover:text-yellow-400 transition-colors nav-link"
                   data-testid="button-login-nav"
                 >
                   Log In
@@ -6811,7 +6812,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
                 <button
                   data-replit-metadata="client/src/components/navigation.tsx:71:12"
                   data-component-name="Button"
-                  class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-10 px-4 py-2 bg-stepdoc-accent text-white hover:bg-stepdoc-accent/90 nav-button"
+                  class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-10 px-4 py-2 bg-stepdoc-accent text-white hover:bg-stepdoc-accent/90 nav-button"
                   data-testid="button-chrome-nav"
                 >
                   Get StepDoc for free
@@ -6859,266 +6860,86 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
           <div
             data-replit-metadata="client/src/components/hero-section.tsx:7:6"
             data-component-name="div"
-            class="container mx-auto px-4 sm:px-6 lg:px-8 pt-16"
+            class="container mx-auto px-4 sm:px-6 lg:px-8 pt-24"
           >
-            <div
-              data-replit-metadata="client/src/components/hero-section.tsx:8:8"
-              data-component-name="div"
-              class="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]"
-            >
-              <div
-                data-replit-metadata="client/src/components/hero-section.tsx:9:10"
-                data-component-name="div"
-                class="text-center lg:text-left"
-              >
-                <h1
-                  data-replit-metadata="client/src/components/hero-section.tsx:10:12"
-                  data-component-name="h1"
-                  class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight mb-6"
+            <div class="hero-horizontal-layout min-h-[80vh] flex items-center justify-center">
+              <!-- Slogan -->
+              <h1 class="hero-slogan">
+                Effortless Guides. <span class="text-yellow-400 handwritten-highlight">Instantly.</span><br>
+                Your Workflow, <span class="text-sky-300 handwritten-highlight">Documented.</span>&nbsp;<span class="text-lime-400 handwritten-highlight">Your Way.</span>
+              </h1>
+
+              <!-- Buttons -->
+              <div class="hero-buttons">
+                <button
+                  data-replit-metadata="client/src/components/hero-section.tsx:40:14"
+                  data-component-name="Button"
+                  class="justify-center gap-2 whitespace-nowrap text-sm lg:text-base font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-12 lg:h-14 rounded-md px-8 lg:px-10 bg-stepdoc-accent text-white hover:bg-stepdoc-accent/90 flex items-center space-x-2 shadow-xl"
+                  data-testid="button-chrome-hero"
                 >
-                  Effortless Guides.
-                  <span
-                    data-replit-metadata="client/src/components/hero-section.tsx:11:33"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-chrome w-5 h-5 lg:w-6 lg:h-6"
+                    data-replit-metadata="client/src/components/hero-section.tsx:45:16"
+                    data-component-name="Chrome"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <line x1="21.17" x2="12" y1="8" y2="8"></line>
+                    <line x1="3.95" x2="8.54" y1="6.06" y2="14"></line>
+                    <line
+                      x1="10.88"
+                      x2="15.46"
+                      y1="21.94"
+                      y2="14"
+                    ></line></svg
+                  ><span
+                    data-replit-metadata="client/src/components/hero-section.tsx:46:16"
                     data-component-name="span"
-                    class="text-yellow-400"
-                    >Instantly.</span
-                  ><br
-                    data-replit-metadata="client/src/components/hero-section.tsx:11:89"
-                    data-component-name="br"
-                  />Your Workflow,
-                  <span
-                    data-replit-metadata="client/src/components/hero-section.tsx:12:29"
+                    >Add to Chrome - It's Free</span
+                  ></button
+                ><button
+                  data-replit-metadata="client/src/components/hero-section.tsx:57:14"
+                  data-component-name="Button"
+                  class="justify-center gap-2 whitespace-nowrap text-sm lg:text-base font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent h-12 lg:h-14 rounded-md px-8 lg:px-10 text-white hover:text-stepdoc-primary flex items-center space-x-2 border-2 border-white"
+                  data-testid="button-demo-hero"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-play w-5 h-5"
+                    data-replit-metadata="client/src/components/hero-section.tsx:63:16"
+                    data-component-name="Play"
+                  >
+                    <polygon points="6 3 20 12 6 21 6 3"></polygon></svg
+                  ><span
+                    data-replit-metadata="client/src/components/hero-section.tsx:64:16"
                     data-component-name="span"
-                    class="text-sky-300"
-                    >Documented.</span
-                  ><br
-                    data-replit-metadata="client/src/components/hero-section.tsx:12:88"
-                    data-component-name="br"
-                  /><span class="text-lime-400">Your Way.</span>
-                </h1>
-                <p
-                  data-replit-metadata="client/src/components/hero-section.tsx:16:12"
-                  data-component-name="p"
-                  class="text-lg sm:text-xl lg:text-2xl text-white mb-8 leading-relaxed max-w-2xl lg:max-w-none"
-                >
-                  StepDoc automates documentation, transforming complex
-                  processes into crystal-clear, professional step-by-step
-                  guides. Super powerful, incredibly affordable, completely
-                  yours.
-                </p>
-                <div
-                  data-replit-metadata="client/src/components/hero-section.tsx:20:12"
-                  data-component-name="div"
-                  class="grid grid-cols-2 gap-4 mb-8 text-sm"
-                >
-                  <div
-                    data-replit-metadata="client/src/components/hero-section.tsx:21:14"
-                    data-component-name="div"
-                    class="flex items-center space-x-2"
+                    >Watch Video</span
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-rocket text-stepdoc-accent w-4 h-4"
-                      data-replit-metadata="client/src/components/hero-section.tsx:22:16"
-                      data-component-name="Rocket"
-                    >
-                      <path
-                        d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"
-                      ></path>
-                      <path
-                        d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"
-                      ></path>
-                      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
-                      <path
-                        d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"
-                      ></path></svg
-                    ><span
-                      data-replit-metadata="client/src/components/hero-section.tsx:23:16"
-                      data-component-name="span"
-                      class="font-medium text-white"
-                      >Super Powerful Software</span
-                    >
-                  </div>
-                  <div
-                    data-replit-metadata="client/src/components/hero-section.tsx:25:14"
-                    data-component-name="div"
-                    class="flex items-center space-x-2"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-dollar-sign text-stepdoc-warning w-4 h-4"
-                      data-replit-metadata="client/src/components/hero-section.tsx:26:16"
-                      data-component-name="DollarSign"
-                    >
-                      <line x1="12" x2="12" y1="2" y2="22"></line>
-                      <path
-                        d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
-                      ></path></svg
-                    ><span
-                      data-replit-metadata="client/src/components/hero-section.tsx:27:16"
-                      data-component-name="span"
-                      class="font-medium text-white"
-                      >Half the Price of Competitors</span
-                    >
-                  </div>
-                  <div
-                    data-replit-metadata="client/src/components/hero-section.tsx:29:14"
-                    data-component-name="div"
-                    class="flex items-center space-x-2"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-laptop text-stepdoc-primary w-4 h-4"
-                      data-replit-metadata="client/src/components/hero-section.tsx:30:16"
-                      data-component-name="Laptop"
-                    >
-                      <path
-                        d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"
-                      ></path></svg
-                    ><span
-                      data-replit-metadata="client/src/components/hero-section.tsx:31:16"
-                      data-component-name="span"
-                      class="font-medium text-white"
-                      >Extension + Desktop App</span
-                    >
-                  </div>
-                  <div
-                    data-replit-metadata="client/src/components/hero-section.tsx:33:14"
-                    data-component-name="div"
-                    class="flex items-center space-x-2"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-lock-open text-stepdoc-secondary w-4 h-4"
-                      data-replit-metadata="client/src/components/hero-section.tsx:34:16"
-                      data-component-name="Unlock"
-                    >
-                      <rect
-                        width="18"
-                        height="11"
-                        x="3"
-                        y="11"
-                        rx="2"
-                        ry="2"
-                      ></rect>
-                      <path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg
-                    ><span
-                      data-replit-metadata="client/src/components/hero-section.tsx:35:16"
-                      data-component-name="span"
-                      class="font-medium text-white"
-                      >No Vendor Lock-in</span
-                    >
-                  </div>
-                </div>
-                <div
-                  data-replit-metadata="client/src/components/hero-section.tsx:39:12"
-                  data-component-name="div"
-                  class="flex flex-col sm:flex-row gap-4 lg:gap-6"
-                >
-                  <button
-                    data-replit-metadata="client/src/components/hero-section.tsx:40:14"
-                    data-component-name="Button"
-                    class="justify-center gap-2 whitespace-nowrap text-sm lg:text-base font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 h-12 lg:h-14 rounded-md px-8 lg:px-10 bg-stepdoc-accent text-white hover:bg-stepdoc-accent/90 flex items-center space-x-2 shadow-xl"
-                    data-testid="button-chrome-hero"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-chrome w-5 h-5 lg:w-6 lg:h-6"
-                      data-replit-metadata="client/src/components/hero-section.tsx:45:16"
-                      data-component-name="Chrome"
-                    >
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <circle cx="12" cy="12" r="4"></circle>
-                      <line x1="21.17" x2="12" y1="8" y2="8"></line>
-                      <line x1="3.95" x2="8.54" y1="6.06" y2="14"></line>
-                      <line
-                        x1="10.88"
-                        x2="15.46"
-                        y1="21.94"
-                        y2="14"
-                      ></line></svg
-                    ><span
-                      data-replit-metadata="client/src/components/hero-section.tsx:46:16"
-                      data-component-name="span"
-                      >Add to Chrome - It's Free</span
-                    ></button
-                  ><button
-                    data-replit-metadata="client/src/components/hero-section.tsx:57:14"
-                    data-component-name="Button"
-                    class="justify-center gap-2 whitespace-nowrap text-sm lg:text-base font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:bg-accent h-12 lg:h-14 rounded-md px-8 lg:px-10 text-white hover:text-stepdoc-primary flex items-center space-x-2 border-2 border-white"
-                    data-testid="button-demo-hero"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-play w-5 h-5"
-                      data-replit-metadata="client/src/components/hero-section.tsx:63:16"
-                      data-component-name="Play"
-                    >
-                      <polygon points="6 3 20 12 6 21 6 3"></polygon></svg
-                    ><span
-                      data-replit-metadata="client/src/components/hero-section.tsx:64:16"
-                      data-component-name="span"
-                      >Watch Demo</span
-                    >
-                  </button>
-                </div>
+                </button>
               </div>
-              <div
-                data-replit-metadata="client/src/components/hero-section.tsx:69:10"
-                data-component-name="div"
-                class="relative w-full max-w-5xl mx-auto"
-              >
-                <div class="relative rounded-2xl overflow-hidden shadow-2xl w-full h-[600px]">
+
+              <!-- Video -->
+              <div class="hero-video-container">
+                <div class="relative rounded-2xl overflow-hidden shadow-2xl w-full h-[400px]">
                   <video 
-                    class="w-full h-[600px] rounded-2xl object-cover" 
+                    class="w-full h-[400px] rounded-2xl object-cover" 
                     autoplay 
                     muted 
                     loop 
@@ -7129,6 +6950,57 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
                   </video>
                 </div>
               </div>
+
+              <!-- Features Grid -->
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8 max-w-4xl">
+                <div class="flex flex-col items-center text-center">
+                  <div class="w-12 h-12 bg-gradient-to-br from-stepdoc-accent to-green-400 rounded-lg flex items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white w-6 h-6">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                      <path d="M2 17l10 5 10-5"></path>
+                      <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white font-medium text-sm">Redact features</span>
+                </div>
+                
+                <div class="flex flex-col items-center text-center">
+                  <div class="w-12 h-12 bg-gradient-to-br from-stepdoc-warning to-yellow-400 rounded-lg flex items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white w-6 h-6">
+                      <line x1="12" x2="12" y1="2" y2="22"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white font-medium text-sm">Half the Price of Competitors</span>
+                </div>
+                
+                <div class="flex flex-col items-center text-center">
+                  <div class="w-12 h-12 bg-gradient-to-br from-stepdoc-primary to-blue-400 rounded-lg flex items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white w-6 h-6">
+                      <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white font-medium text-sm">Extension + Desktop App</span>
+                </div>
+                
+                <div class="flex flex-col items-center text-center">
+                  <div class="w-12 h-12 bg-gradient-to-br from-stepdoc-secondary to-purple-400 rounded-lg flex items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white w-6 h-6">
+                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                    </svg>
+                  </div>
+                  <span class="text-white font-medium text-sm">Control over documentation</span>
+                </div>
+              </div>
+
+              <!-- Description Text -->
+              <p class="hero-description">
+                StepDoc automates documentation, transforming complex
+                processes into crystal-clear, professional step-by-step
+                guides. Super powerful, incredibly affordable, completely
+                yours.
+              </p>
             </div>
           </div>
         </section>
