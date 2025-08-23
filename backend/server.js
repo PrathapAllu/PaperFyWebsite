@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -71,6 +72,32 @@ app.post('/api/auth/signup', (req, res) => {
 app.post('/api/payment/create-checkout', (req, res) => {
     // TODO: Implement Stripe checkout
     res.json({ message: 'Payment endpoint ready' });
+});
+
+// Subscription API
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+app.post('/api/subscription/status', async (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) {
+    return res.status(400).json({ active: false, message: 'User ID required' });
+  }
+  try {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user_id)
+      .eq('is_active', true)
+      .single();
+    if (error || !data) {
+      return res.json({ active: false });
+    }
+    return res.json({ active: true, subscription: data });
+  } catch (err) {
+    return res.status(500).json({ active: false, message: 'Error checking subscription' });
+  }
 });
 
 app.listen(PORT, () => {
