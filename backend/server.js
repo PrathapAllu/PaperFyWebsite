@@ -34,9 +34,32 @@ app.get('/api/health', (req, res) => {
 });
 
 // Auth API (placeholder for Supabase integration)
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+
 app.post('/api/auth/login', (req, res) => {
     // TODO: Implement Supabase auth
-    res.json({ message: 'Login endpoint ready' });
+    // Simulate external login success
+    const { username } = req.body;
+    // You should replace this with actual external login logic
+    if (!username) {
+        return res.status(400).json({ success: false, message: 'Username required' });
+    }
+    // Issue JWT
+    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ username, success: true, token });
+});
+
+// JWT verify endpoint
+app.post('/api/auth/verify', (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(401).json({ success: false, message: 'No token provided' });
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        res.json({ success: true, user: decoded });
+    } catch (err) {
+        res.status(401).json({ success: false, message: 'Invalid token' });
+    }
 });
 
 app.post('/api/auth/signup', (req, res) => {

@@ -107,18 +107,17 @@ class LoginPage {
         try {
             // Use auth service for login
             const result = await authService.signIn(email, password);
-            
             if (result.success) {
                 this.showSuccess(result.message || 'Login successful!');
-                
                 // Store user data if remember me is checked
                 if (rememberMe && result.data) {
                     localStorage.setItem('stepdoc_user', JSON.stringify(result.data));
+                    localStorage.setItem('stepdoc_remember_me', 'true');
+                } else {
+                    localStorage.removeItem('stepdoc_remember_me');
                 }
-                
                 // Send data back to extension if available
                 this.sendToExtension(result.data);
-                
                 // Redirect after a short delay
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
@@ -303,56 +302,51 @@ class LoginPage {
 }
 
 // Initialize login page when DOM is loaded
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Initializing login page...');
-    
     try {
         // Wait for services to be available with more detailed logging
         let attempts = 0;
         const maxAttempts = 50;
-        
         console.log('⏳ Waiting for services to load...');
-        
         while (attempts < maxAttempts) {
-            // Check Supabase
-            const supabaseAvailable = typeof window.supabase !== 'undefined' && 
-                                    typeof window.supabase.createClient === 'function';
-            
-            // Check AuthService
-            const authServiceAvailable = typeof authService !== 'undefined' && 
-                                       typeof authService.waitForSupabase === 'function';
-            
+            const supabaseAvailable = typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function';
+            const authServiceAvailable = typeof authService !== 'undefined' && typeof authService.waitForSupabase === 'function';
             console.log(`Attempt ${attempts + 1}: Supabase=${supabaseAvailable}, AuthService=${authServiceAvailable}`);
-            
             if (supabaseAvailable && authServiceAvailable) {
                 console.log('✅ All services loaded successfully');
                 break;
             }
-            
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
-        
         if (attempts >= maxAttempts) {
             console.error('❌ Services not available after 5 seconds');
             throw new Error('Services not available after waiting');
         }
-        
         // Wait for Supabase to be properly initialized
         console.log('⏳ Waiting for Supabase initialization...');
         await authService.waitForSupabase();
-        
         // Test the connection
         console.log('🔍 Testing Supabase connection...');
         const connectionTest = await authService.testSupabaseConnection();
         if (!connectionTest) {
             throw new Error('Supabase connection test failed');
         }
-        
+
+        // Check if user is already logged in and Remember Me is enabled
+        const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+        const userCheck = await authService.getCurrentUser();
+        if (rememberMeFlag && userCheck.success && userCheck.data) {
+            console.log('🔒 User already logged in with Remember Me, redirecting to dashboard...');
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
         // Initialize login page
         new LoginPage();
         console.log('✅ Login page initialized successfully');
-        
     } catch (error) {
         console.error('❌ Failed to initialize login page:', error);
         console.error('Error details:', error);

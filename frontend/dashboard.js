@@ -6,32 +6,45 @@ class Dashboard {
 
     async init() {
         try {
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('dashboardLoadingOverlay');
+            const mainContent = document.getElementById('mainDashboardContent');
+            if (loadingOverlay) loadingOverlay.style.display = 'flex';
+            if (mainContent) mainContent.style.display = 'none';
+
             // Check authentication status
             await this.checkAuthStatus();
-            
+
+            // Hide loading overlay and show dashboard content
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            if (mainContent) mainContent.style.display = 'block';
+
             // Initialize UI components
             this.initializeEventListeners();
             this.loadUserData();
             this.loadDashboardData();
-            
+
             console.log('Dashboard initialized successfully');
         } catch (error) {
             console.error('Failed to initialize dashboard:', error);
+            // Hide loading overlay and keep dashboard hidden before redirect
+            const loadingOverlay = document.getElementById('dashboardLoadingOverlay');
+            const mainContent = document.getElementById('mainDashboardContent');
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            if (mainContent) mainContent.style.display = 'none';
             this.redirectToLogin();
         }
     }
 
     async checkAuthStatus() {
         try {
-            // Check if user is authenticated with Supabase
+            // Use Supabase Auth to check session
             const { data: { user }, error } = await window.supabaseClient.auth.getUser();
-            
             if (error || !user) {
                 console.log('No authenticated user found');
                 this.redirectToLogin();
                 return;
             }
-            
             this.currentUser = user;
             console.log('Authenticated user:', user.email);
         } catch (error) {
@@ -367,13 +380,13 @@ class Dashboard {
     async handleLogout() {
         try {
             const { error } = await window.supabaseClient.auth.signOut();
-            
+            // Clear Remember Me flag
+            localStorage.removeItem('stepdoc_remember_me');
             if (error) {
                 console.error('Logout error:', error);
                 alert('Failed to logout. Please try again.');
                 return;
             }
-            
             console.log('User logged out successfully');
             this.redirectToLogin();
         } catch (error) {
