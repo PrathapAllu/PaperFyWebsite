@@ -1,3 +1,31 @@
+// --- Moved from login.html ---
+// Supabase CDN is loaded in HTML, so window.supabase is available
+const supabaseUrl = 'https://bqemaogpiunlbdhzvlyd.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxZW1hb2dwaXVubGJkaHp2bHlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MTcwMTIsImV4cCI6MjA3MTM5MzAxMn0.TvzBF6pdrfAOLZUDISvebqYR71zKkZOX-jDlTvOMBQg';
+window.supabaseLib = window.supabase;
+window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+window.supabase = window.supabaseLib;
+window.supabase.client = window.supabaseClient;
+
+// Session check logic (redirect if already logged in)
+document.addEventListener('DOMContentLoaded', async function() {
+    function getSupabaseClient() {
+        if (typeof window !== 'undefined' && window.supabaseClient) {
+            return window.supabaseClient;
+        }
+        return null;
+    }
+    let supabase = getSupabaseClient();
+    if (!supabase && window.supabase && window.supabase.createClient) {
+        supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    }
+    if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+            window.location.href = 'dashboard.html';
+        }
+    }
+});
 class LoginPage {
     constructor() {
         this.isLoginMode = true;

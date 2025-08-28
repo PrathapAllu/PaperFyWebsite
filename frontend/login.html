@@ -8,32 +8,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wdth,wght@82.3,406&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="login.css">
-    <script>
-    document.addEventListener('DOMContentLoaded', async function() {
-        // Wait for Supabase client to be available
-        function getSupabaseClient() {
-            if (typeof window !== 'undefined' && window.supabaseClient) {
-                return window.supabaseClient;
-            }
-            return null;
-        }
-        let supabase = getSupabaseClient();
-        if (!supabase && window.supabase && window.supabase.createClient) {
-            // Fallback for global supabase
-            supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-        }
-        if (supabase) {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session && session.user) {
-                window.location.href = 'dashboard.html';
-            }
-        }
-    });
-    </script>
 </head>
 <body>
     <div class="container">
-        <!-- Navigation -->
+
         <nav class="navbar">
             <div class="nav-content">
                 <div class="nav-left">
@@ -48,7 +26,6 @@
             </div>
         </nav>
 
-        <!-- Main Content -->
         <div class="main-content">
             <div class="auth-container">
                 <div class="auth-card">
@@ -84,7 +61,6 @@
                             </div>
                         </div>
                         <div class="form-options">
-                            <!-- Wrapper to ensure vertical stacking of rows -->
                             <div style="width: 100%;">
                                 <div class="form-row">
                                     <label class="checkbox-label">
@@ -106,7 +82,6 @@
                         </button>
                     </form>
 
-                    <!-- Toggle Forms -->
                     <div class="auth-toggle">
                         <p class="toggle-text">
                             <span id="toggleText">Don't have an account?</span>
@@ -114,7 +89,6 @@
                         </p>
                     </div>
 
-                    <!-- Social Login -->
                     <div class="social-login">
                         <div class="divider">
                             <span class="divider-text">or continue with</span>
@@ -136,21 +110,7 @@
         </div>
     </div>
 
-    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // Initialize Supabase
-        const supabaseUrl = 'https://bqemaogpiunlbdhzvlyd.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxZW1hb2dwaXVubGJkaHp2bHlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MTcwMTIsImV4cCI6MjA3MTM5MzAxMn0.TvzBF6pdrfAOLZUDISvebqYR71zKkZOX-jDlTvOMBQg';
-        
-        // Store the Supabase library reference and create client
-        window.supabaseLib = window.supabase; // Keep the library
-        window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey); // Create client
-        
-        // For backward compatibility, keep both available
-        window.supabase = window.supabaseLib;
-        window.supabase.client = window.supabaseClient;
-    </script>
     <script src="auth.js"></script>
     <script src="login.js"></script>
 </body>
