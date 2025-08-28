@@ -130,7 +130,6 @@ class LoginPage {
             // Use auth service for login
             const result = await authService.signIn(email, password);
             if (result.success) {
-                this.showSuccess(result.message || 'Login successful!');
                 // Store user data if remember me is checked
                 if (rememberMe && result.data) {
                     localStorage.setItem('stepdoc_user', JSON.stringify(result.data));
@@ -140,10 +139,8 @@ class LoginPage {
                 }
                 // Send data back to extension if available
                 this.sendToExtension(result.data);
-                // Redirect after a short delay
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1500);
+                // Redirect immediately
+                window.location.href = 'dashboard.html';
             } else {
                 this.showError(result.message || 'Login failed');
             }
@@ -157,21 +154,13 @@ class LoginPage {
 
     async handleSocialLogin(provider) {
         try {
-            this.showSuccess(`Connecting to ${provider}...`);
-            
             // Use auth service for social login
             const result = await authService.socialLogin(provider);
-            
             if (result.success) {
-                this.showSuccess(`Successfully logged in with ${provider}!`);
-                
                 // Send data back to extension if available
                 this.sendToExtension(result.data);
-                
-                // Redirect after a short delay
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1500);
+                // Redirect immediately
+                window.location.href = 'dashboard.html';
             } else {
                 this.showError(result.message || `Failed to login with ${provider}`);
             }
@@ -189,15 +178,21 @@ class LoginPage {
     setLoadingState(button, loading) {
         const btnText = button.querySelector('.btn-text');
         const btnLoader = button.querySelector('.btn-loader');
-        
+        const loadingOverlay = document.getElementById('loginLoadingOverlay');
         if (loading) {
             btnText.style.display = 'none';
             btnLoader.style.display = 'flex';
             button.disabled = true;
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
         } else {
             btnText.style.display = 'inline';
             btnLoader.style.display = 'none';
             button.disabled = false;
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
         }
     }
 
