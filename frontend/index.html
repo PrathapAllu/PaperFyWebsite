@@ -10870,4 +10870,62 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       yearlyBtn.addEventListener('click', () => updatePricing(true));
     });
   </script>
+  <script>
+    // Burger menu mobile logic
+    document.addEventListener('DOMContentLoaded', function() {
+      const burgerBtn = document.querySelector('[data-testid="button-mobile-menu"]');
+      if (!burgerBtn) return;
+      if (document.getElementById('mobile-nav-menu')) return; // Prevent duplicate menu
+
+      const navMenu = document.createElement('div');
+      navMenu.id = 'mobile-nav-menu';
+      navMenu.style.position = 'fixed';
+      navMenu.style.top = '64px';
+      navMenu.style.left = '0';
+      navMenu.style.width = '100%';
+      navMenu.style.background = '#222';
+      navMenu.style.zIndex = '9999';
+      navMenu.style.display = 'none';
+      navMenu.style.flexDirection = 'column';
+      navMenu.style.gap = '1rem';
+      navMenu.style.padding = '1.5rem 0';
+      navMenu.innerHTML = `
+        <button class="nav-link" style="color:white;font-size:1.2rem;background:none;border:none;padding:1rem;width:100%;text-align:left;" data-section="features">Features</button>
+        <button class="nav-link" style="color:white;font-size:1.2rem;background:none;border:none;padding:1rem;width:100%;text-align:left;" data-section="how-it-works">How It Works</button>
+        <button class="nav-link" style="color:white;font-size:1.2rem;background:none;border:none;padding:1rem;width:100%;text-align:left;" data-section="use-cases">Use Cases</button>
+        <button class="nav-link" style="color:white;font-size:1.2rem;background:none;border:none;padding:1rem;width:100%;text-align:left;" data-section="pricing">Pricing</button>
+        <a href="login.html" style="color:white;font-size:1.2rem;padding:1rem;display:block;text-align:left;">Log In</a>
+        <a href="signup.html" style="color:white;font-size:1.2rem;padding:1rem;display:block;text-align:left;">Get StepDoc for free</a>
+      `;
+      document.body.appendChild(navMenu);
+
+      burgerBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        navMenu.style.display = navMenu.style.display === 'none' ? 'flex' : 'none';
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!navMenu.contains(e.target) && e.target !== burgerBtn) {
+          navMenu.style.display = 'none';
+        }
+      });
+
+      navMenu.querySelectorAll('button.nav-link').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          navMenu.style.display = 'none';
+          const section = btn.getAttribute('data-section');
+          const sectionMap = {
+            'features': 'hero-buttons',
+            'how-it-works': 'hero-video-container',
+            'use-cases': 'hero-description',
+            'pricing': 'problem-card-0'
+          };
+          const el = document.getElementsByClassName(sectionMap[section])[0] || document.getElementById(sectionMap[section]);
+          if (el) {
+            el.scrollIntoView({behavior: 'smooth'});
+          }
+        });
+      });
+    });
+  </script>
 </html>
