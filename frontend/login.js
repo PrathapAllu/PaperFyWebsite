@@ -21,8 +21,7 @@ class LoginPage {
         this.rememberMe = document.getElementById('rememberMe');
         
         // Social buttons
-        this.googleBtn = document.querySelector('.google-btn');
-        this.githubBtn = document.querySelector('.github-btn');
+    this.googleBtn = document.querySelector('.google-btn');
     }
 
     setupEventListeners() {
@@ -30,8 +29,7 @@ class LoginPage {
         this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         
         // Social login
-        this.googleBtn.addEventListener('click', () => this.handleSocialLogin('google'));
-        this.githubBtn.addEventListener('click', () => this.handleSocialLogin('github'));
+    this.googleBtn.addEventListener('click', () => this.handleSocialLogin('google'));
         
         // Input validation
         this.loginEmail.addEventListener('input', () => this.clearErrors());
