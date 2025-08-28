@@ -227,91 +227,44 @@ class LoginPage {
 
     showError(message) {
         this.clearErrors();
-        
         const existingError = document.querySelector('.error-message');
         if (existingError) {
             existingError.remove();
         }
-        
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error-message';
         errorDiv.innerHTML = `
-            <div style="
-                background: #fef2f2; 
-                border: 1px solid #fecaca; 
-                border-radius: 8px; 
-                padding: 0.75rem; 
-                margin-bottom: 1rem; 
-                font-size: 0.9rem; 
-                color: #dc2626;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-            ">
-                <span style="font-size: 1.1rem;">⚠️</span>
-                ${message}
+            <div class="message-box error">
+                <span class="message-icon" aria-hidden="true">⚠️</span>
+                <span class="message-text">${message}</span>
+                <button class="message-close" aria-label="Dismiss error" tabindex="0">×</button>
             </div>
         `;
-        
+        errorDiv.querySelector('.message-close').addEventListener('click', () => {
+            if (errorDiv.parentNode) errorDiv.remove();
+        });
         this.loginForm.insertBefore(errorDiv, this.loginForm.firstChild);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (errorDiv.parentNode) {
-                errorDiv.remove();
-            }
-        }, 5000);
     }
 
     showSuccess(message) {
         this.clearErrors();
-        
         const existingSuccess = document.querySelector('.success-message');
         if (existingSuccess) {
             existingSuccess.remove();
         }
-        
         const successDiv = document.createElement('div');
         successDiv.className = 'success-message';
-        successDiv.style.cursor = 'pointer';
-        successDiv.title = 'Click to dismiss';
         successDiv.innerHTML = `
-            <div style="
-                background: #f0fdf4; 
-                border: 1px solid #bbf7d0; 
-                border-radius: 8px; 
-                padding: 0.75rem; 
-                margin-bottom: 1rem; 
-                font-size: 0.9rem; 
-                color: #15803d;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 0.5rem;
-            ">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="font-size: 1.1rem;">✅</span>
-                    ${message}
-                </div>
-                <span style="font-size: 0.8rem; opacity: 0.7;">×</span>
+            <div class="message-box success">
+                <span class="message-icon" aria-hidden="true">✅</span>
+                <span class="message-text">${message}</span>
+                <button class="message-close" aria-label="Dismiss success" tabindex="0">×</button>
             </div>
         `;
-        
-        // Allow clicking to dismiss
-        successDiv.addEventListener('click', () => {
-            if (successDiv.parentNode) {
-                successDiv.remove();
-            }
+        successDiv.querySelector('.message-close').addEventListener('click', () => {
+            if (successDiv.parentNode) successDiv.remove();
         });
-        
         this.loginForm.insertBefore(successDiv, this.loginForm.firstChild);
-        
-        // Auto-remove after 3 seconds (faster for redirect messages)
-        setTimeout(() => {
-            if (successDiv.parentNode) {
-                successDiv.remove();
-            }
-        }, 3000);
     }
 
     clearErrors() {
