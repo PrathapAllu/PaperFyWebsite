@@ -8,6 +8,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wdth,wght@82.3,406&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="login.css">
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Wait for Supabase client to be available
+        function getSupabaseClient() {
+            if (typeof window !== 'undefined' && window.supabaseClient) {
+                return window.supabaseClient;
+            }
+            return null;
+        }
+        let supabase = getSupabaseClient();
+        if (!supabase && window.supabase && window.supabase.createClient) {
+            // Fallback for global supabase
+            supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        }
+        if (supabase) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session && session.user) {
+                window.location.href = 'dashboard.html';
+            }
+        }
+    });
+    </script>
 </head>
 <body>
     <div class="container">

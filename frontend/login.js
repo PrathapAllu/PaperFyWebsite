@@ -128,15 +128,10 @@ class LoginPage {
         
         try {
             // Use auth service for login
-            const result = await authService.signIn(email, password);
+            const result = await authService.signIn(email, password, rememberMe);
             if (result.success) {
                 // Store user data if remember me is checked
-                if (rememberMe && result.data) {
-                    localStorage.setItem('stepdoc_user', JSON.stringify(result.data));
-                    localStorage.setItem('stepdoc_remember_me', 'true');
-                } else {
-                    localStorage.removeItem('stepdoc_remember_me');
-                }
+                // No need to manually store user/session, Supabase handles persistence
                 // Send data back to extension if available
                 this.sendToExtension(result.data);
                 // Redirect immediately

@@ -1,3 +1,22 @@
+@media (max-width: 480px) {
+    .social-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .message-box {
+        width: 100%;
+        font-size: 0.95rem;
+        padding: 1rem 0.5rem;
+        box-sizing: border-box;
+    }
+    .auth-form {
+        padding: 1rem 0.5rem;
+    }
+    .auth-btn {
+        font-size: 1rem;
+        padding: 1rem;
+    }
+}
 /* Loading overlay for login form */
 .loading-overlay {
     position: absolute;

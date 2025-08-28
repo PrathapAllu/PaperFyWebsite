@@ -125,7 +125,7 @@ class AuthService {
     }
     
     // Sign in existing user
-    async signIn(email, password) {
+    async signIn(email, password, persistSession = false) {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
@@ -135,6 +135,9 @@ class AuthService {
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password
+            }, {
+                // Use local persistence for 'Remember me', session for temporary
+                persistSession: persistSession ? 'local' : 'session'
             });
             
             if (error) {
