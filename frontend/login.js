@@ -36,6 +36,26 @@ class LoginPage {
         // Input validation
         this.loginEmail.addEventListener('input', () => this.clearErrors());
         this.loginPassword.addEventListener('input', () => this.clearErrors());
+
+        // Password visibility toggle
+        const togglePassword = document.getElementById('togglePassword');
+        const eyeOpen = document.getElementById('eyeOpen');
+        const eyeClosed = document.getElementById('eyeClosed');
+        if (togglePassword && this.loginPassword) {
+            togglePassword.addEventListener('click', () => {
+                const isPassword = this.loginPassword.type === 'password';
+                this.loginPassword.type = isPassword ? 'text' : 'password';
+                eyeOpen.style.display = isPassword ? 'none' : '';
+                eyeClosed.style.display = isPassword ? '' : 'none';
+                togglePassword.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+            });
+            // Also allow keyboard toggle
+            togglePassword.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    togglePassword.click();
+                }
+            });
+        }
     }
 
     checkExtensionConnection() {
