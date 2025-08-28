@@ -175,19 +175,25 @@ class LoginPage {
 
     async handleSocialLogin(provider) {
         try {
+            console.log(`🚀 Starting ${provider} login...`);
+            
             // Use auth service for social login
             const result = await authService.socialLogin(provider);
+            console.log(`${provider} login result:`, result);
+            
             if (result.success) {
+                console.log(`✅ ${provider} login successful, redirecting...`);
                 // Send data back to extension if available
                 this.sendToExtension(result.data);
-                // Redirect immediately
-                window.location.href = 'dashboard.html';
+                // Note: For OAuth, the redirect happens automatically via Supabase
+                // We don't need to manually redirect here as signInWithOAuth handles it
             } else {
+                console.error(`❌ ${provider} login failed:`, result.message);
                 this.showError(result.message || `Failed to login with ${provider}`);
             }
         } catch (error) {
-            console.error(`${provider} login error:`, error);
-            this.showError(`An error occurred with ${provider} login`);
+            console.error(`❌ ${provider} login error:`, error);
+            this.showError(`An error occurred with ${provider} login: ${error.message || 'Unknown error'}`);
         }
     }
 
