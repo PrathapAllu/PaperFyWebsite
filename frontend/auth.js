@@ -4,6 +4,9 @@
 class AuthService {
     constructor() {
         this.initialized = false;
+        this.refreshTokenTimeout = null;
+        this.isRefreshing = false;
+        this.refreshPromise = null;
     }
 
     // Wait for Supabase to be available
@@ -168,6 +171,41 @@ class AuthService {
     // Sign out user
     async signOut() {
         try {
+            // Clear refresh timeout
+            if (this.refreshTokenTimeout) {
+                clearTimeout(this.refreshTokenTimeout);
+                this.refreshTokenTimeout = null;
+            }
+
+            // Get stored tokens
+            const accessToken = localStorage.getItem('access_token');
+            const refreshToken = localStorage.getItem('refresh_token');
+
+            // Call logout endpoint to invalidate tokens server-side
+            if (accessToken || refreshToken) {
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': await this.getCSRFToken()
+                        },
+                        body: JSON.stringify({
+                            accessToken,
+                            refreshToken
+                        })
+                    });
+                } catch (logoutError) {
+                    console.error('Server logout error:', logoutError);
+                }
+            }
+
+            // Clear local storage
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('stepdoc_remember_me');
+
+            // Also sign out from Supabase
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
             
@@ -176,8 +214,7 @@ class AuthService {
             const { error } = await supabase.auth.signOut();
             
             if (error) {
-                console.error('❌ Logout error:', error);
-                throw error;
+                console.error('❌ Supabase logout error:', error);
             }
             
             console.log('✅ Logout successful');
@@ -428,6 +465,152 @@ class AuthService {
             return false;
         }
     }
+
+    // Get CSRF token
+    async getCSRFToken() {
+        try {
+            const response = await fetch('/api/csrf-token');
+            const data = await response.json();
+            return data.csrfToken;
+        } catch (error) {
+            console.error('Failed to get CSRF token:', error);
+            return '';
+        }
+    }
+
+    // Refresh access token
+    async refreshAccessToken() {
+        if (this.isRefreshing) {
+            return this.refreshPromise;
+        }
+
+        this.isRefreshing = true;
+        this.refreshPromise = this._performTokenRefresh();
+
+        try {
+            const result = await this.refreshPromise;
+            return result;
+        } finally {
+            this.isRefreshing = false;
+            this.refreshPromise = null;
+        }
+    }
+
+    async _performTokenRefresh() {
+        try {
+            const refreshToken = localStorage.getItem('refresh_token');
+            
+            if (!refreshToken) {
+                throw new Error('No refresh token available');
+            }
+
+            const response = await fetch('/api/auth/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': await this.getCSRFToken()
+                },
+                body: JSON.stringify({ refreshToken })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Token refresh failed');
+            }
+
+            // Store new tokens
+            localStorage.setItem('access_token', data.data.accessToken);
+            localStorage.setItem('refresh_token', data.data.refreshToken);
+
+            // Schedule next refresh (13 minutes for 15-minute tokens)
+            this.scheduleTokenRefresh();
+
+            return {
+                success: true,
+                accessToken: data.data.accessToken,
+                refreshToken: data.data.refreshToken
+            };
+
+        } catch (error) {
+            console.error('Token refresh failed:', error);
+            
+            // Clear tokens and redirect to login
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Schedule automatic token refresh
+    scheduleTokenRefresh() {
+        // Clear existing timeout
+        if (this.refreshTokenTimeout) {
+            clearTimeout(this.refreshTokenTimeout);
+        }
+
+        // Schedule refresh for 13 minutes (2 minutes before 15-minute expiry)
+        this.refreshTokenTimeout = setTimeout(() => {
+            this.refreshAccessToken();
+        }, 13 * 60 * 1000); // 13 minutes
+    }
+
+    // Initialize token management
+    initializeTokenManagement() {
+        const accessToken = localStorage.getItem('access_token');
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        if (accessToken && refreshToken) {
+            // Schedule refresh for existing session
+            this.scheduleTokenRefresh();
+        }
+    }
+
+    // Make authenticated API request with automatic token refresh
+    async makeAuthenticatedRequest(url, options = {}) {
+        let accessToken = localStorage.getItem('access_token');
+
+        if (!accessToken) {
+            throw new Error('No access token available');
+        }
+
+        // First attempt
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                ...options.headers,
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // If token expired, try to refresh
+        if (response.status === 401) {
+            const refreshResult = await this.refreshAccessToken();
+            
+            if (refreshResult.success) {
+                // Retry with new token
+                return fetch(url, {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'Authorization': `Bearer ${refreshResult.accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } else {
+                // Refresh failed, redirect to login
+                window.location.href = '/login';
+                throw new Error('Session expired');
+            }
+        }
+
+        return response;
+    }
 }
 
 // Create global auth service instance
@@ -436,6 +619,11 @@ const authService = new AuthService();
 // Make it available globally
 if (typeof window !== 'undefined') {
     window.authService = authService;
+    
+    // Initialize token management when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        authService.initializeTokenManagement();
+    });
 }
 
 // Log when auth service is loaded

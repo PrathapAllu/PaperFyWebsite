@@ -2,11 +2,36 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
+const { body, validationResult, param, query } = require('express-validator');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Environment variable validation
+const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+    console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+    console.error('Please check your .env file and ensure all required variables are set.');
+    process.exit(1);
+}
+
+// Security configuration
+const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+const JWT_SECRET = process.env.JWT_SECRET;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+// Initialize Supabase client
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Rate limiting middleware
 const generalLimiter = rateLimit({
@@ -43,9 +68,36 @@ const strictAuthLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Security middleware
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'", "https://api.supabase.io", "wss://realtime.supabase.io"]
+        }
+    }
+}));
+
+app.use(cookieParser());
+app.use(express.json({ limit: '10mb' })); // Limit JSON payload size
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(mongoSanitize()); // Remove any keys that contain prohibited characters
+app.use(hpp()); // Protect against HTTP Parameter Pollution attacks
+
+// CORS configuration with more security
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://yourdomain.com', 'https://www.yourdomain.com'] 
+        : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/api/', generalLimiter); // Apply general rate limiting to all API routes
 
@@ -75,12 +127,258 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'StepDoc API is running' });
 });
 
+// Input validation middleware
+const validateInput = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid input data',
+            errors: errors.array()
+        });
+    }
+    next();
+};
+
+// CSRF protection middleware (simple token-based approach)
+const generateCSRFToken = () => {
+    return require('crypto').randomBytes(32).toString('hex');
+};
+
+const csrfProtection = (req, res, next) => {
+    // Skip CSRF for GET requests and auth verification
+    if (req.method === 'GET' || req.path === '/api/auth/verify') {
+        return next();
+    }
+
+    const token = req.headers['x-csrf-token'] || req.body._csrf;
+    const sessionToken = req.session?.csrfToken || req.cookies?.csrfToken;
+
+    if (!token || !sessionToken || token !== sessionToken) {
+        return res.status(403).json({
+            success: false,
+            message: 'Invalid CSRF token'
+        });
+    }
+    next();
+};
+
+// CSRF token endpoint
+app.get('/api/csrf-token', (req, res) => {
+    const token = generateCSRFToken();
+    res.cookie('csrfToken', token, { 
+        httpOnly: true, 
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 3600000 // 1 hour
+    });
+    res.json({ csrfToken: token });
+});
+
+// Password hashing utilities
+const hashPassword = async (password) => {
+    return await bcrypt.hash(password, BCRYPT_ROUNDS);
+};
+
+const comparePassword = async (password, hash) => {
+    return await bcrypt.compare(password, hash);
+};
+
+// Local Authentication System with Password Hashing
+// Note: This provides a secure local alternative to Supabase
+// You can switch between local and Supabase auth based on your needs
+
+// In-memory user storage (replace with database in production)
+const users = new Map();
+
+// Token blacklist for invalidated tokens
+const tokenBlacklist = new Set();
+
+// Refresh tokens storage (replace with database in production)
+const refreshTokens = new Map();
+
+// Local user registration with proper password hashing
+app.post('/api/auth/local/register',
+    authLimiter,
+    [
+        body('email')
+            .isEmail()
+            .normalizeEmail()
+            .withMessage('Please provide a valid email address'),
+        body('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters long')
+            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
+            .withMessage('Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character'),
+        body('name').optional().isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters')
+    ],
+    csrfProtection,
+    validateInput,
+    async (req, res) => {
+        try {
+            const { email, password, name } = req.body;
+
+            // Check if user already exists
+            if (users.has(email)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'User already exists with this email'
+                });
+            }
+
+            // Hash password
+            const hashedPassword = await hashPassword(password);
+
+            // Create user
+            const user = {
+                id: require('crypto').randomUUID(),
+                email,
+                name: name || email.split('@')[0],
+                password: hashedPassword,
+                createdAt: new Date(),
+                verified: false
+            };
+
+            users.set(email, user);
+
+            // Generate JWT access token (short-lived)
+            const accessToken = jwt.sign(
+                { id: user.id, email: user.email, type: 'access' },
+                JWT_SECRET,
+                { expiresIn: '15m' }
+            );
+
+            // Generate refresh token (long-lived)
+            const refreshToken = jwt.sign(
+                { id: user.id, email: user.email, type: 'refresh' },
+                JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+
+            // Store refresh token
+            refreshTokens.set(refreshToken, { userId: user.id, email: user.email, createdAt: new Date() });
+
+            // Remove password from response
+            const { password: _, ...userResponse } = user;
+
+            res.status(201).json({
+                success: true,
+                message: 'User registered successfully',
+                data: {
+                    user: userResponse,
+                    accessToken,
+                    refreshToken
+                }
+            });
+
+        } catch (error) {
+            console.error('Local registration error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+            });
+        }
+    }
+);
+
+// Local user login with password verification
+app.post('/api/auth/local/login',
+    authLimiter,
+    strictAuthLimiter,
+    [
+        body('email')
+            .isEmail()
+            .normalizeEmail()
+            .withMessage('Please provide a valid email address'),
+        body('password')
+            .notEmpty()
+            .withMessage('Password is required')
+    ],
+    csrfProtection,
+    validateInput,
+    async (req, res) => {
+        try {
+            const { email, password } = req.body;
+
+            // Find user
+            const user = users.get(email);
+            if (!user) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Invalid email or password'
+                });
+            }
+
+            // Verify password
+            const isValidPassword = await comparePassword(password, user.password);
+            if (!isValidPassword) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Invalid email or password'
+                });
+            }
+
+            // Generate JWT access token (short-lived)
+            const accessToken = jwt.sign(
+                { id: user.id, email: user.email, type: 'access' },
+                JWT_SECRET,
+                { expiresIn: '15m' }
+            );
+
+            // Generate refresh token (long-lived)
+            const refreshToken = jwt.sign(
+                { id: user.id, email: user.email, type: 'refresh' },
+                JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+
+            // Store refresh token
+            refreshTokens.set(refreshToken, { userId: user.id, email: user.email, createdAt: new Date() });
+
+            // Remove password from response
+            const { password: _, ...userResponse } = user;
+
+            res.json({
+                success: true,
+                message: 'Login successful',
+                data: {
+                    user: userResponse,
+                    accessToken,
+                    refreshToken
+                }
+            });
+
+        } catch (error) {
+            console.error('Local login error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+            });
+        }
+    }
+);
+
 // Modern Authentication API with Supabase integration
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 // Email/Password Login
-app.post('/api/auth/login', authLimiter, strictAuthLimiter, async (req, res) => {
+app.post('/api/auth/login', 
+    authLimiter, 
+    strictAuthLimiter,
+    [
+        body('email')
+            .isEmail()
+            .normalizeEmail()
+            .withMessage('Please provide a valid email address'),
+        body('password')
+            .isLength({ min: 6 })
+            .withMessage('Password must be at least 6 characters long')
+            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+            .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number')
+    ],
+    csrfProtection,
+    validateInput,
+    async (req, res) => {
     try {
         const { email, password } = req.body;
         
@@ -133,7 +431,23 @@ app.post('/api/auth/login', authLimiter, strictAuthLimiter, async (req, res) => 
 });
 
 // Email/Password Signup
-app.post('/api/auth/signup', authLimiter, async (req, res) => {
+app.post('/api/auth/signup', 
+    authLimiter,
+    [
+        body('email')
+            .isEmail()
+            .normalizeEmail()
+            .withMessage('Please provide a valid email address'),
+        body('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters long')
+            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
+            .withMessage('Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character'),
+        body('metadata').optional().isObject().withMessage('Metadata must be an object')
+    ],
+    csrfProtection,
+    validateInput,
+    async (req, res) => {
     try {
         const { email, password, metadata = {} } = req.body;
         
@@ -196,7 +510,16 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
 });
 
 // OAuth Login
-app.post('/api/auth/oauth/:provider', authLimiter, async (req, res) => {
+app.post('/api/auth/oauth/:provider', 
+    authLimiter,
+    [
+        param('provider').isIn(['google', 'github', 'discord', 'facebook', 'twitter'])
+            .withMessage('Unsupported OAuth provider'),
+        body('redirectTo').optional().isURL().withMessage('Redirect URL must be valid')
+    ],
+    csrfProtection,
+    validateInput,
+    async (req, res) => {
     try {
         const { provider } = req.params;
         const { redirectTo } = req.body;
@@ -244,7 +567,17 @@ app.post('/api/auth/oauth/:provider', authLimiter, async (req, res) => {
 });
 
 // Password Reset
-app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
+app.post('/api/auth/reset-password', 
+    authLimiter,
+    [
+        body('email')
+            .isEmail()
+            .normalizeEmail()
+            .withMessage('Please provide a valid email address')
+    ],
+    csrfProtection,
+    validateInput,
+    async (req, res) => {
     try {
         const { email } = req.body;
 
@@ -289,7 +622,18 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
 });
 
 // Update Password
-app.post('/api/auth/update-password', async (req, res) => {
+app.post('/api/auth/update-password',
+    [
+        body('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters long')
+            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
+            .withMessage('Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character'),
+        body('accessToken').notEmpty().withMessage('Access token is required')
+    ],
+    csrfProtection,
+    validateInput,
+    async (req, res) => {
     try {
         const { password, accessToken } = req.body;
 
@@ -351,17 +695,134 @@ app.post('/api/auth/update-password', async (req, res) => {
     }
 });
 
-// Logout
-app.post('/api/auth/logout', async (req, res) => {
+// Token refresh endpoint
+app.post('/api/auth/refresh',
+    [
+        body('refreshToken').notEmpty().withMessage('Refresh token is required')
+    ],
+    csrfProtection,
+    validateInput,
+    async (req, res) => {
     try {
-        const { accessToken } = req.body;
+        const { refreshToken } = req.body;
 
+        if (!refreshToken) {
+            return res.status(401).json({
+                success: false,
+                message: 'Refresh token required'
+            });
+        }
+
+        // Check if refresh token is blacklisted
+        if (tokenBlacklist.has(refreshToken)) {
+            return res.status(401).json({
+                success: false,
+                message: 'Refresh token has been invalidated'
+            });
+        }
+
+        // Verify refresh token
+        let decoded;
+        try {
+            decoded = jwt.verify(refreshToken, JWT_SECRET);
+            if (decoded.type !== 'refresh') {
+                throw new Error('Invalid token type');
+            }
+        } catch (jwtError) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid or expired refresh token'
+            });
+        }
+
+        // Check if refresh token exists in storage
+        const storedToken = refreshTokens.get(refreshToken);
+        if (!storedToken || storedToken.userId !== decoded.id) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid refresh token'
+            });
+        }
+
+        // Find user
+        const user = Array.from(users.values()).find(u => u.id === decoded.id);
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Generate new access token
+        const newAccessToken = jwt.sign(
+            { id: user.id, email: user.email, type: 'access' },
+            JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        // Generate new refresh token (rotation)
+        const newRefreshToken = jwt.sign(
+            { id: user.id, email: user.email, type: 'refresh' },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        // Invalidate old refresh token
+        refreshTokens.delete(refreshToken);
+        tokenBlacklist.add(refreshToken);
+
+        // Store new refresh token
+        refreshTokens.set(newRefreshToken, { userId: user.id, email: user.email, createdAt: new Date() });
+
+        res.json({
+            success: true,
+            message: 'Tokens refreshed successfully',
+            data: {
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken
+            }
+        });
+
+    } catch (error) {
+        console.error('Token refresh endpoint error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+});
+
+// Logout
+app.post('/api/auth/logout',
+    [
+        body('accessToken').optional().isString().withMessage('Access token must be a string'),
+        body('refreshToken').optional().isString().withMessage('Refresh token must be a string')
+    ],
+    csrfProtection,
+    validateInput,
+    async (req, res) => {
+    try {
+        const { accessToken, refreshToken } = req.body;
+
+        // Blacklist tokens to invalidate them
         if (accessToken) {
-            // Set the session for this request
-            const { error } = await supabase.auth.signOut();
-            
-            if (error) {
-                console.error('Logout error:', error);
+            tokenBlacklist.add(accessToken);
+        }
+
+        if (refreshToken) {
+            tokenBlacklist.add(refreshToken);
+            refreshTokens.delete(refreshToken);
+        }
+
+        // Also sign out from Supabase if using Supabase tokens
+        if (accessToken) {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    console.error('Supabase logout error:', error);
+                }
+            } catch (supabaseError) {
+                console.error('Supabase logout failed:', supabaseError);
             }
         }
 
@@ -380,7 +841,12 @@ app.post('/api/auth/logout', async (req, res) => {
 });
 
 // Session verification endpoint
-app.post('/api/auth/verify', async (req, res) => {
+app.post('/api/auth/verify',
+    [
+        body('accessToken').notEmpty().withMessage('Access token is required')
+    ],
+    validateInput,
+    async (req, res) => {
     try {
         const { accessToken } = req.body;
         
@@ -462,6 +928,30 @@ const authenticateUser = async (req, res, next) => {
                 success: false,
                 message: 'Access token required'
             });
+        }
+
+        // Check if token is blacklisted
+        if (tokenBlacklist.has(accessToken)) {
+            return res.status(401).json({
+                success: false,
+                message: 'Token has been invalidated'
+            });
+        }
+
+        // Try local JWT verification first
+        try {
+            const decoded = jwt.verify(accessToken, JWT_SECRET);
+            if (decoded.type === 'access') {
+                // For local tokens, find user
+                const user = Array.from(users.values()).find(u => u.id === decoded.id);
+                if (user) {
+                    req.user = user;
+                    req.accessToken = accessToken;
+                    return next();
+                }
+            }
+        } catch (jwtError) {
+            // If JWT verification fails, try Supabase
         }
 
         // Verify token with Supabase
@@ -572,9 +1062,6 @@ app.post('/api/payment/create-checkout', (req, res) => {
 });
 
 // Subscription API
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Protected route - check subscription status
 app.post('/api/subscription/status', authenticateUser, async (req, res) => {
