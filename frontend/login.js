@@ -48,10 +48,12 @@ class LoginPage {
                 eyeOpen.style.display = isPassword ? 'none' : '';
                 eyeClosed.style.display = isPassword ? '' : 'none';
                 togglePassword.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+                togglePassword.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
             });
             // Also allow keyboard toggle
             togglePassword.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
                     togglePassword.click();
                 }
             });
