@@ -14,29 +14,27 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Environment variable validation
+
 const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'JWT_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
-    console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
-    console.error('Please check your .env file and ensure all required variables are set.');
     process.exit(1);
 }
 
-// Security configuration
+
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS) || 12;
 const JWT_SECRET = process.env.JWT_SECRET;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
-// Initialize Supabase client
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Rate limiting middleware
+
 const generalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     message: {
         success: false,
         message: 'Too many requests from this IP, please try again later.'
@@ -46,20 +44,20 @@ const generalLimiter = rateLimit({
 });
 
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Limit each IP to 5 auth attempts per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 5,
     message: {
         success: false,
         message: 'Too many authentication attempts, please try again in 15 minutes.'
     },
     standardHeaders: true,
     legacyHeaders: false,
-    skipSuccessfulRequests: true, // Don't count successful requests
+    skipSuccessfulRequests: true,
 });
 
 const strictAuthLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10, // Limit each IP to 10 login attempts per hour
+    windowMs: 60 * 60 * 1000,
+    max: 10,
     message: {
         success: false,
         message: 'Account temporarily locked due to too many failed login attempts. Please try again in 1 hour.'
@@ -68,7 +66,7 @@ const strictAuthLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Security middleware
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -83,12 +81,12 @@ app.use(helmet({
 }));
 
 app.use(cookieParser());
-app.use(express.json({ limit: '10mb' })); // Limit JSON payload size
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(mongoSanitize()); // Remove any keys that contain prohibited characters
-app.use(hpp()); // Protect against HTTP Parameter Pollution attacks
+app.use(mongoSanitize());
+app.use(hpp());
 
-// CORS configuration with more security
+
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
         ? ['https://yourdomain.com', 'https://www.yourdomain.com'] 
@@ -99,9 +97,9 @@ app.use(cors({
 }));
 
 app.use(express.static(path.join(__dirname, '../frontend')));
-app.use('/api/', generalLimiter); // Apply general rate limiting to all API routes
+app.use('/api/', generalLimiter);
 
-// Routes
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
@@ -122,12 +120,12 @@ app.get('/reset-password', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/reset-password.html'));
 });
 
-// API Routes
+
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'StepDoc API is running' });
 });
 
-// Enhanced input validation middleware
+
 const validateInput = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -152,13 +150,13 @@ const validateInput = (req, res, next) => {
     next();
 };
 
-// CSRF protection middleware (simple token-based approach)
+
 const generateCSRFToken = () => {
     return require('crypto').randomBytes(32).toString('hex');
 };
 
 const csrfProtection = (req, res, next) => {
-    // Skip CSRF for GET requests and auth verification
+
     if (req.method === 'GET' || req.path === '/api/auth/verify') {
         return next();
     }
@@ -175,19 +173,19 @@ const csrfProtection = (req, res, next) => {
     next();
 };
 
-// CSRF token endpoint
+
 app.get('/api/csrf-token', (req, res) => {
     const token = generateCSRFToken();
     res.cookie('csrfToken', token, { 
         httpOnly: true, 
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 3600000 // 1 hour
+        maxAge: 3600000
     });
     res.json({ csrfToken: token });
 });
 
-// Password hashing utilities
+
 const hashPassword = async (password) => {
     return await bcrypt.hash(password, BCRYPT_ROUNDS);
 };
@@ -196,20 +194,18 @@ const comparePassword = async (password, hash) => {
     return await bcrypt.compare(password, hash);
 };
 
-// Local Authentication System with Password Hashing
-// Note: This provides a secure local alternative to Supabase
-// You can switch between local and Supabase auth based on your needs
 
-// In-memory user storage (replace with database in production)
+
+
 const users = new Map();
 
-// Token blacklist for invalidated tokens
+
 const tokenBlacklist = new Set();
 
-// Refresh tokens storage (replace with database in production)
+
 const refreshTokens = new Map();
 
-// Local user registration with proper password hashing
+
 app.post('/api/auth/local/register',
     authLimiter,
     [
@@ -230,7 +226,7 @@ app.post('/api/auth/local/register',
         try {
             const { email, password, name } = req.body;
 
-            // Check if user already exists
+
             if (users.has(email)) {
                 return res.status(400).json({
                     success: false,
@@ -238,10 +234,10 @@ app.post('/api/auth/local/register',
                 });
             }
 
-            // Hash password
+
             const hashedPassword = await hashPassword(password);
 
-            // Create user
+
             const user = {
                 id: require('crypto').randomUUID(),
                 email,
@@ -253,24 +249,24 @@ app.post('/api/auth/local/register',
 
             users.set(email, user);
 
-            // Generate JWT access token (short-lived)
+
             const accessToken = jwt.sign(
                 { id: user.id, email: user.email, type: 'access' },
                 JWT_SECRET,
                 { expiresIn: '15m' }
             );
 
-            // Generate refresh token (long-lived)
+
             const refreshToken = jwt.sign(
                 { id: user.id, email: user.email, type: 'refresh' },
                 JWT_SECRET,
                 { expiresIn: '7d' }
             );
 
-            // Store refresh token
+
             refreshTokens.set(refreshToken, { userId: user.id, email: user.email, createdAt: new Date() });
 
-            // Remove password from response
+
             const { password: _, ...userResponse } = user;
 
             res.status(201).json({
@@ -284,7 +280,6 @@ app.post('/api/auth/local/register',
             });
 
         } catch (error) {
-            console.error('Local registration error:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -293,7 +288,7 @@ app.post('/api/auth/local/register',
     }
 );
 
-// Local user login with password verification
+
 app.post('/api/auth/local/login',
     authLimiter,
     strictAuthLimiter,
@@ -312,7 +307,7 @@ app.post('/api/auth/local/login',
         try {
             const { email, password } = req.body;
 
-            // Find user
+
             const user = users.get(email);
             if (!user) {
                 return res.status(401).json({
@@ -321,7 +316,7 @@ app.post('/api/auth/local/login',
                 });
             }
 
-            // Verify password
+
             const isValidPassword = await comparePassword(password, user.password);
             if (!isValidPassword) {
                 return res.status(401).json({
@@ -330,24 +325,24 @@ app.post('/api/auth/local/login',
                 });
             }
 
-            // Generate JWT access token (short-lived)
+
             const accessToken = jwt.sign(
                 { id: user.id, email: user.email, type: 'access' },
                 JWT_SECRET,
                 { expiresIn: '15m' }
             );
 
-            // Generate refresh token (long-lived)
+
             const refreshToken = jwt.sign(
                 { id: user.id, email: user.email, type: 'refresh' },
                 JWT_SECRET,
                 { expiresIn: '7d' }
             );
 
-            // Store refresh token
+
             refreshTokens.set(refreshToken, { userId: user.id, email: user.email, createdAt: new Date() });
 
-            // Remove password from response
+
             const { password: _, ...userResponse } = user;
 
             res.json({
@@ -361,7 +356,6 @@ app.post('/api/auth/local/login',
             });
 
         } catch (error) {
-            console.error('Local login error:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -370,10 +364,10 @@ app.post('/api/auth/local/login',
     }
 );
 
-// Modern Authentication API with Supabase integration
+
 const jwt = require('jsonwebtoken');
 
-// Email/Password Login
+
 app.post('/api/auth/login', 
     authLimiter, 
     strictAuthLimiter,
@@ -394,7 +388,7 @@ app.post('/api/auth/login',
     try {
         const { email, password } = req.body;
         
-        // Validation
+
         if (!email || !password) {
             const errorResponse = createErrorResponse('Missing required fields', { endpoint: 'login', fields: ['email', 'password'] });
             return res.status(400).json({ 
@@ -426,14 +420,13 @@ app.post('/api/auth/login',
             });
         }
 
-        // Authenticate with Supabase
+
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
         });
 
         if (error) {
-            console.error('Login error:', error.message);
             const errorResponse = createErrorResponse(error, { endpoint: 'login', email });
             return res.status(401).json({ 
                 success: false, 
@@ -442,7 +435,7 @@ app.post('/api/auth/login',
             });
         }
 
-        // Success response with user data and session
+
         res.json({ 
             success: true, 
             message: 'Login successful',
@@ -453,7 +446,6 @@ app.post('/api/auth/login',
         });
 
     } catch (error) {
-        console.error('Login endpoint error:', error);
         const errorResponse = createErrorResponse(error, { endpoint: 'login' });
         res.status(500).json({ 
             success: false, 
@@ -463,7 +455,7 @@ app.post('/api/auth/login',
     }
 });
 
-// Email/Password Signup
+
 app.post('/api/auth/signup', 
     authLimiter,
     [
@@ -484,7 +476,7 @@ app.post('/api/auth/signup',
     try {
         const { email, password, metadata = {} } = req.body;
         
-        // Validation
+
         if (!email || !password) {
             const errorResponse = createErrorResponse('Missing required fields', { endpoint: 'signup', fields: ['email', 'password'] });
             return res.status(400).json({ 
@@ -530,7 +522,7 @@ app.post('/api/auth/signup',
             });
         }
 
-        // Sign up with Supabase
+
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -540,7 +532,6 @@ app.post('/api/auth/signup',
         });
 
         if (error) {
-            console.error('Signup error:', error.message);
             const errorResponse = createErrorResponse(error, { endpoint: 'signup', email });
             return res.status(400).json({ 
                 success: false, 
@@ -549,7 +540,7 @@ app.post('/api/auth/signup',
             });
         }
 
-        // Success response
+
         res.json({ 
             success: true, 
             message: 'Account created successfully! Please check your email for the verification link.',
@@ -560,7 +551,6 @@ app.post('/api/auth/signup',
         });
 
     } catch (error) {
-        console.error('Signup endpoint error:', error);
         const errorResponse = createErrorResponse(error, { endpoint: 'signup' });
         res.status(500).json({ 
             success: false, 
@@ -570,7 +560,7 @@ app.post('/api/auth/signup',
     }
 });
 
-// OAuth Login
+
 app.post('/api/auth/oauth/:provider', 
     authLimiter,
     [
@@ -585,7 +575,7 @@ app.post('/api/auth/oauth/:provider',
         const { provider } = req.params;
         const { redirectTo } = req.body;
 
-        // Validate provider
+
         const supportedProviders = ['google', 'github', 'discord', 'facebook', 'twitter'];
         if (!supportedProviders.includes(provider)) {
             return res.status(400).json({
@@ -594,7 +584,7 @@ app.post('/api/auth/oauth/:provider',
             });
         }
 
-        // Generate OAuth URL
+
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider,
             options: {
@@ -603,7 +593,6 @@ app.post('/api/auth/oauth/:provider',
         });
 
         if (error) {
-            console.error(`${provider} OAuth error:`, error);
             return res.status(400).json({
                 success: false,
                 message: error.message || `${provider} login failed`
@@ -619,7 +608,6 @@ app.post('/api/auth/oauth/:provider',
         });
 
     } catch (error) {
-        console.error('OAuth endpoint error:', error);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -627,7 +615,7 @@ app.post('/api/auth/oauth/:provider',
     }
 });
 
-// Password Reset
+
 app.post('/api/auth/reset-password', 
     authLimiter,
     [
@@ -661,7 +649,6 @@ app.post('/api/auth/reset-password',
         });
 
         if (error) {
-            console.error('Password reset error:', error.message);
             const errorResponse = createErrorResponse(error, { endpoint: 'reset-password', email });
             return res.status(400).json({
                 success: false,
@@ -676,7 +663,6 @@ app.post('/api/auth/reset-password',
         });
 
     } catch (error) {
-        console.error('Password reset endpoint error:', error);
         const errorResponse = createErrorResponse(error, { endpoint: 'reset-password' });
         res.status(500).json({
             success: false,
@@ -686,7 +672,7 @@ app.post('/api/auth/reset-password',
     }
 });
 
-// Update Password
+
 app.post('/api/auth/update-password',
     [
         body('password')
@@ -723,7 +709,7 @@ app.post('/api/auth/update-password',
             });
         }
 
-        // Set the session for this request
+
         const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
         
         if (userError || !user) {
@@ -733,13 +719,12 @@ app.post('/api/auth/update-password',
             });
         }
 
-        // Update password
+
         const { error } = await supabase.auth.updateUser({
             password: password
         });
 
         if (error) {
-            console.error('Password update error:', error);
             return res.status(400).json({
                 success: false,
                 message: error.message || 'Failed to update password'
@@ -752,7 +737,6 @@ app.post('/api/auth/update-password',
         });
 
     } catch (error) {
-        console.error('Password update endpoint error:', error);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -760,7 +744,7 @@ app.post('/api/auth/update-password',
     }
 });
 
-// Token refresh endpoint
+
 app.post('/api/auth/refresh',
     [
         body('refreshToken').notEmpty().withMessage('Refresh token is required')
@@ -778,7 +762,7 @@ app.post('/api/auth/refresh',
             });
         }
 
-        // Check if refresh token is blacklisted
+
         if (tokenBlacklist.has(refreshToken)) {
             return res.status(401).json({
                 success: false,
@@ -786,7 +770,7 @@ app.post('/api/auth/refresh',
             });
         }
 
-        // Verify refresh token
+
         let decoded;
         try {
             decoded = jwt.verify(refreshToken, JWT_SECRET);
@@ -800,7 +784,7 @@ app.post('/api/auth/refresh',
             });
         }
 
-        // Check if refresh token exists in storage
+
         const storedToken = refreshTokens.get(refreshToken);
         if (!storedToken || storedToken.userId !== decoded.id) {
             return res.status(401).json({
@@ -809,7 +793,7 @@ app.post('/api/auth/refresh',
             });
         }
 
-        // Find user
+
         const user = Array.from(users.values()).find(u => u.id === decoded.id);
         if (!user) {
             return res.status(401).json({
@@ -818,25 +802,25 @@ app.post('/api/auth/refresh',
             });
         }
 
-        // Generate new access token
+
         const newAccessToken = jwt.sign(
             { id: user.id, email: user.email, type: 'access' },
             JWT_SECRET,
             { expiresIn: '15m' }
         );
 
-        // Generate new refresh token (rotation)
+
         const newRefreshToken = jwt.sign(
             { id: user.id, email: user.email, type: 'refresh' },
             JWT_SECRET,
             { expiresIn: '7d' }
         );
 
-        // Invalidate old refresh token
+
         refreshTokens.delete(refreshToken);
         tokenBlacklist.add(refreshToken);
 
-        // Store new refresh token
+
         refreshTokens.set(newRefreshToken, { userId: user.id, email: user.email, createdAt: new Date() });
 
         res.json({
@@ -849,7 +833,6 @@ app.post('/api/auth/refresh',
         });
 
     } catch (error) {
-        console.error('Token refresh endpoint error:', error);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -857,7 +840,7 @@ app.post('/api/auth/refresh',
     }
 });
 
-// Logout
+
 app.post('/api/auth/logout',
     [
         body('accessToken').optional().isString().withMessage('Access token must be a string'),
@@ -869,7 +852,7 @@ app.post('/api/auth/logout',
     try {
         const { accessToken, refreshToken } = req.body;
 
-        // Blacklist tokens to invalidate them
+
         if (accessToken) {
             tokenBlacklist.add(accessToken);
         }
@@ -879,15 +862,12 @@ app.post('/api/auth/logout',
             refreshTokens.delete(refreshToken);
         }
 
-        // Also sign out from Supabase if using Supabase tokens
+
         if (accessToken) {
             try {
                 const { error } = await supabase.auth.signOut();
-                if (error) {
-                    console.error('Supabase logout error:', error);
-                }
             } catch (supabaseError) {
-                console.error('Supabase logout failed:', supabaseError);
+
             }
         }
 
@@ -897,7 +877,6 @@ app.post('/api/auth/logout',
         });
 
     } catch (error) {
-        console.error('Logout endpoint error:', error);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -905,7 +884,7 @@ app.post('/api/auth/logout',
     }
 });
 
-// Session verification endpoint
+
 app.post('/api/auth/verify',
     [
         body('accessToken').notEmpty().withMessage('Access token is required')
@@ -922,7 +901,7 @@ app.post('/api/auth/verify',
             });
         }
 
-        // Verify token with Supabase
+
         const { data: { user }, error } = await supabase.auth.getUser(accessToken);
         
         if (error || !user) {
@@ -938,7 +917,6 @@ app.post('/api/auth/verify',
         });
 
     } catch (error) {
-        console.error('Token verification error:', error);
         res.status(500).json({ 
             success: false, 
             message: 'Internal server error' 
@@ -946,7 +924,7 @@ app.post('/api/auth/verify',
     }
 });
 
-// Get current user
+
 app.get('/api/auth/user', async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
@@ -974,7 +952,6 @@ app.get('/api/auth/user', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get user endpoint error:', error);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -982,7 +959,7 @@ app.get('/api/auth/user', async (req, res) => {
     }
 });
 
-// Authentication middleware
+
 const authenticateUser = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -995,7 +972,7 @@ const authenticateUser = async (req, res, next) => {
             });
         }
 
-        // Check if token is blacklisted
+
         if (tokenBlacklist.has(accessToken)) {
             return res.status(401).json({
                 success: false,
@@ -1003,11 +980,11 @@ const authenticateUser = async (req, res, next) => {
             });
         }
 
-        // Try local JWT verification first
+
         try {
             const decoded = jwt.verify(accessToken, JWT_SECRET);
             if (decoded.type === 'access') {
-                // For local tokens, find user
+
                 const user = Array.from(users.values()).find(u => u.id === decoded.id);
                 if (user) {
                     req.user = user;
@@ -1016,10 +993,10 @@ const authenticateUser = async (req, res, next) => {
                 }
             }
         } catch (jwtError) {
-            // If JWT verification fails, try Supabase
+
         }
 
-        // Verify token with Supabase
+
         const { data: { user }, error } = await supabase.auth.getUser(accessToken);
 
         if (error || !user) {
@@ -1029,13 +1006,12 @@ const authenticateUser = async (req, res, next) => {
             });
         }
 
-        // Add user to request object
+
         req.user = user;
         req.accessToken = accessToken;
         next();
 
     } catch (error) {
-        console.error('Authentication middleware error:', error);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -1043,7 +1019,7 @@ const authenticateUser = async (req, res, next) => {
     }
 };
 
-// Optional authentication middleware (doesn't fail if no token)
+
 const optionalAuth = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -1058,18 +1034,18 @@ const optionalAuth = async (req, res, next) => {
         }
         next();
     } catch (error) {
-        // Continue without authentication
+
         next();
     }
 };
 
-// Utility function for email validation
+
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
 
-// Enhanced error handling function
+
 function createErrorResponse(error, context = {}) {
     if (!error) {
         return {
@@ -1084,7 +1060,7 @@ function createErrorResponse(error, context = {}) {
     const errorMessage = typeof error === 'string' ? error : error.message;
     const errorCode = error.code || 'UNKNOWN';
     
-    // Enhanced error mappings with detailed responses
+
     const errorMappings = {
         'Invalid login credentials': {
             type: 'AUTH_ERROR',
@@ -1168,14 +1144,14 @@ function createErrorResponse(error, context = {}) {
         }
     };
     
-    // Check for exact matches first
+
     for (const [key, errorResponse] of Object.entries(errorMappings)) {
         if (errorMessage.toLowerCase().includes(key.toLowerCase())) {
             return { ...errorResponse, originalError: errorCode };
         }
     }
     
-    // Category-based error handling
+
     if (errorMessage.toLowerCase().includes('auth') || 
         errorMessage.toLowerCase().includes('login') || 
         errorMessage.toLowerCase().includes('credential')) {
@@ -1238,7 +1214,7 @@ function createErrorResponse(error, context = {}) {
         };
     }
     
-    // Default error response
+
     return {
         type: 'SERVER_ERROR',
         code: 'INTERNAL_ERROR',
@@ -1254,15 +1230,15 @@ function createErrorResponse(error, context = {}) {
     };
 }
 
-// Payment API (placeholder for Stripe integration)
+
 app.post('/api/payment/create-checkout', (req, res) => {
-    // TODO: Implement Stripe checkout
+
     res.json({ message: 'Payment endpoint ready' });
 });
 
-// Subscription API
 
-// Protected route - check subscription status
+
+
 app.post('/api/subscription/status', authenticateUser, async (req, res) => {
   try {
     const userId = req.user.id; // Get user ID from authenticated user
@@ -1287,7 +1263,6 @@ app.post('/api/subscription/status', authenticateUser, async (req, res) => {
     });
     
   } catch (err) {
-    console.error('Subscription status error:', err);
     return res.status(500).json({ 
       active: false, 
       message: 'Error checking subscription' 
@@ -1296,5 +1271,5 @@ app.post('/api/subscription/status', authenticateUser, async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 StepDoc server running on http://localhost:${PORT}`);
+
 });

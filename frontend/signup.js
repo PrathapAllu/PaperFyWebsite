@@ -7,14 +7,12 @@ class SignupPage {
         this.setupElements();
         this.setupEventListeners();
         this.setupValidation();
-        console.log('Signup page initialized');
+
     }
 
     setupElements() {
-        // Form
         this.signupForm = document.getElementById('signupForm');
         
-        // Form inputs
         this.firstName = document.getElementById('firstName');
         this.lastName = document.getElementById('lastName');
         this.email = document.getElementById('email');
@@ -24,14 +22,11 @@ class SignupPage {
         this.agreeTerms = document.getElementById('agreeTerms');
         this.newsletter = document.getElementById('newsletter');
         
-        // Submit button
         this.submitBtn = document.getElementById('submitBtn');
         
-        // Password toggles
         this.togglePassword = document.getElementById('togglePassword');
         this.toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
         
-        // Validation elements
         this.firstNameValidation = document.getElementById('firstNameValidation');
         this.lastNameValidation = document.getElementById('lastNameValidation');
         this.emailValidation = document.getElementById('emailValidation');
@@ -40,36 +35,29 @@ class SignupPage {
         this.confirmPasswordValidation = document.getElementById('confirmPasswordValidation');
         this.passwordStrength = document.getElementById('passwordStrength');
         
-        // Social buttons
         this.googleBtn = document.querySelector('.google-btn');
         this.githubBtn = document.querySelector('.github-btn');
         
-        // Message elements
         this.messageContainer = document.getElementById('messageContainer');
         this.messageIcon = document.getElementById('messageIcon');
         this.messageText = document.getElementById('messageText');
         this.messageClose = document.getElementById('messageClose');
         
-        // Loading overlay
         this.loadingOverlay = document.getElementById('loadingOverlay');
     }
 
     setupEventListeners() {
-        // Form submission
+
         this.signupForm.addEventListener('submit', (e) => this.handleSignup(e));
         
-        // Password toggles
         this.togglePassword.addEventListener('click', () => this.togglePasswordVisibility('password'));
         this.toggleConfirmPassword.addEventListener('click', () => this.togglePasswordVisibility('confirmPassword'));
         
-        // Social login buttons
         this.googleBtn.addEventListener('click', () => this.handleSocialSignup('google'));
         this.githubBtn.addEventListener('click', () => this.handleSocialSignup('github'));
         
-        // Message close
         this.messageClose.addEventListener('click', () => this.hideMessage());
         
-        // Auto-hide message after 5 seconds
         let messageTimeout;
         const showMessage = this.showMessage.bind(this);
         this.showMessage = (message, type) => {
@@ -80,7 +68,7 @@ class SignupPage {
     }
 
     setupValidation() {
-        // Real-time validation
+
         this.firstName.addEventListener('input', () => this.validateFirstName());
         this.lastName.addEventListener('input', () => this.validateLastName());
         this.email.addEventListener('input', () => this.validateEmail());
@@ -92,7 +80,6 @@ class SignupPage {
         });
         this.confirmPassword.addEventListener('input', () => this.validateConfirmPassword());
         
-        // Focus events
         this.firstName.addEventListener('focus', () => this.clearValidation('firstName'));
         this.lastName.addEventListener('focus', () => this.clearValidation('lastName'));
         this.email.addEventListener('focus', () => this.clearValidation('email'));
@@ -101,7 +88,7 @@ class SignupPage {
         this.confirmPassword.addEventListener('focus', () => this.clearValidation('confirmPassword'));
     }
 
-    // Validation Methods
+
     validateFirstName() {
         const firstName = this.firstName.value.trim();
         const nameRegex = /^[a-zA-Z]{2,25}$/;
@@ -230,7 +217,6 @@ class SignupPage {
         if (/\d/.test(password)) score++;
         if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
         
-        // Remove all strength classes
         strengthBar.classList.remove('weak', 'medium', 'good', 'strong');
         
         if (score <= 2) {
@@ -287,7 +273,6 @@ class SignupPage {
     async handleSignup(e) {
         e.preventDefault();
         
-        // Validate all fields
         const isFirstNameValid = this.validateFirstName();
         const isLastNameValid = this.validateLastName();
         const isEmailValid = this.validateEmail();
@@ -306,7 +291,6 @@ class SignupPage {
             return;
         }
         
-        // Prepare user data
         const userData = {
             email: this.email.value.trim(),
             password: this.password.value,
@@ -324,52 +308,44 @@ class SignupPage {
         try {
             this.setLoadingState(true);
             
-            // First check if user already exists (silent check - no emails sent)
-            console.log('🔍 Checking if user exists before signup...');
+
             const userExistsCheck = await authService.checkUserExists(userData.email);
             
             if (userExistsCheck.exists) {
-                console.log('✅ User already exists, redirecting to login');
+
                 this.setLoadingState(false);
                 this.showMessage('Account already exists. Redirecting to login...', 'info');
                 
-                // Redirect to login page after 1.5 seconds (shorter delay)
+
                 setTimeout(() => {
                     window.location.href = `login.html?message=Account already exists. Please sign in.&email=${encodeURIComponent(userData.email)}`;
                 }, 1500);
                 return;
             }
             
-            console.log('✅ User does not exist, proceeding with signup');
-            
-            // Try to sign up - user doesn't exist
+
             const result = await authService.signUp(userData.email, userData.password, userData.options.data);
             
-            console.log('🔍 Signup result:', result);
-            console.log('🔍 Success:', result.success);
-            console.log('🔍 Message:', result.message);
-            
-            // Handle signup result
+
             if (result.success) {
                 this.showMessage('Account created successfully! Please check your email to verify your account.', 'success');
                 
-                // Clear form
+
                 this.signupForm.reset();
                 this.passwordStrength.classList.remove('show');
                 this.clearAllValidations();
                 
-                // Redirect to login page after delay
+
                 setTimeout(() => {
                     window.location.href = 'login.html?message=Please check your email to verify your account before signing in.';
                 }, 3000);
                 
             } else {
-                // Signup failed for other reasons
                 this.showMessage(result.message || 'Failed to create account. Please try again.', 'error', result.error);
             }
             
         } catch (error) {
-            console.error('Signup error:', error);
+
             this.showMessage('An error occurred during registration. Please try again.', 'error');
         } finally {
             this.setLoadingState(false);
@@ -385,7 +361,7 @@ class SignupPage {
             if (result.success) {
                 this.showMessage(`Signing up with ${provider}...`, 'success');
                 
-                // Redirect to dashboard after successful social signup
+
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1500);
@@ -395,7 +371,7 @@ class SignupPage {
             }
             
         } catch (error) {
-            console.error(`${provider} signup error:`, error);
+
             this.showMessage(`An error occurred with ${provider} signup`, 'error');
         } finally {
             this.setLoadingState(false);
@@ -422,7 +398,7 @@ class SignupPage {
     }
 
     showMessage(message, type = 'info', errorData = null) {
-        // Handle enhanced error responses
+
         let displayMessage = message;
         let suggestions = [];
         let fieldErrors = [];
@@ -432,7 +408,7 @@ class SignupPage {
             suggestions = errorData.suggestions || [];
             fieldErrors = errorData.fields || [];
             
-            // Show field-specific errors
+
             if (fieldErrors.length > 0) {
                 fieldErrors.forEach(fieldError => {
                     this.showFieldError(fieldError.field, fieldError.message);
@@ -440,7 +416,7 @@ class SignupPage {
             }
         }
         
-        // Create suggestions HTML
+
         let suggestionsHTML = '';
         if (suggestions.length > 0) {
             suggestionsHTML = `
@@ -459,7 +435,7 @@ class SignupPage {
         const messageContent = this.messageContainer.querySelector('.message-content');
         messageContent.className = `message-content ${type}`;
         
-        // Set appropriate icon
+
         switch (type) {
             case 'success':
                 this.messageIcon.textContent = '✅';
@@ -480,19 +456,19 @@ class SignupPage {
         if (field) {
             field.classList.add('error');
             
-            // Remove existing field error
+
             const existingFieldError = field.parentNode.querySelector('.field-error');
             if (existingFieldError) {
                 existingFieldError.remove();
             }
             
-            // Add new field error
+
             const fieldErrorDiv = document.createElement('div');
             fieldErrorDiv.className = 'field-error';
             fieldErrorDiv.textContent = message;
             field.parentNode.appendChild(fieldErrorDiv);
             
-            // Remove error styling when user starts typing
+
             const removeError = () => {
                 field.classList.remove('error');
                 if (fieldErrorDiv.parentNode) {
@@ -512,30 +488,30 @@ class SignupPage {
     }
 }
 
-// Initialize signup page when DOM is loaded
+
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Initializing signup page...');
+
     
     try {
-        // Wait for services to be available with more detailed logging
+
         let attempts = 0;
         const maxAttempts = 50;
         
-        console.log('⏳ Waiting for services to load...');
+
         
         while (attempts < maxAttempts) {
-            // Check Supabase
+
             const supabaseAvailable = typeof window.supabase !== 'undefined' && 
                                     typeof window.supabase.createClient === 'function';
             
-            // Check AuthService
+
             const authServiceAvailable = typeof authService !== 'undefined' && 
                                        typeof authService.waitForSupabase === 'function';
             
-            console.log(`Attempt ${attempts + 1}: Supabase=${supabaseAvailable}, AuthService=${authServiceAvailable}`);
+
             
             if (supabaseAvailable && authServiceAvailable) {
-                console.log('✅ All services loaded successfully');
+
                 break;
             }
             
@@ -544,38 +520,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         if (attempts >= maxAttempts) {
-            console.error('❌ Services not available after 5 seconds');
+
             throw new Error('Services not available after waiting');
         }
         
-        // Wait for Supabase to be properly initialized
-        console.log('⏳ Waiting for Supabase initialization...');
+
         await authService.waitForSupabase();
         
-        // Test the connection
-        console.log('🔍 Testing Supabase connection...');
+
         const connectionTest = await authService.testSupabaseConnection();
         if (!connectionTest) {
             throw new Error('Supabase connection test failed');
         }
         
-        // Initialize signup page
+
         new SignupPage();
-        console.log('✅ Signup page initialized successfully');
+
         
     } catch (error) {
-        console.error('❌ Failed to initialize signup page:', error);
-        console.error('Error details:', error);
+
         alert('Authentication service not available. Please refresh the page.');
     }
 });
 
-// Handle browser back/forward buttons
+
 window.addEventListener('popstate', (event) => {
-    console.log('Navigation state changed');
+
 });
 
-// Phone number formatting
+
 document.addEventListener('DOMContentLoaded', () => {
     const phoneInput = document.getElementById('phone');
     

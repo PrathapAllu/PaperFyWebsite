@@ -1,6 +1,3 @@
-// Authentication Service for StepDoc
-// This service uses the globally initialized Supabase client
-
 class AuthService {
     constructor() {
         this.initialized = false;
@@ -9,15 +6,12 @@ class AuthService {
         this.refreshPromise = null;
     }
 
-    // Wait for Supabase to be available
     async waitForSupabase() {
         return new Promise((resolve, reject) => {
             let attempts = 0;
-            const maxAttempts = 50; // 5 seconds max wait
-            
+            const maxAttempts = 50;
             const checkSupabase = () => {
                 if (typeof window !== 'undefined' && window.supabase && window.supabase.createClient) {
-                    console.log('✅ Supabase available');
                     this.initialized = true;
                     resolve(window.supabase);
                 } else if (attempts < maxAttempts) {
@@ -27,12 +21,10 @@ class AuthService {
                     reject(new Error('Supabase not available after 5 seconds'));
                 }
             };
-            
             checkSupabase();
         });
     }
 
-    // Get the current Supabase client
     getSupabaseClient() {
         if (typeof window !== 'undefined' && window.supabaseClient) {
             return window.supabaseClient;
@@ -40,63 +32,38 @@ class AuthService {
         throw new Error('Supabase client not available');
     }
 
-    // Check if user exists without sending any emails
     async checkUserExists(email) {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            console.log('🔍 Checking if user exists (silent check):', email);
-            
-            // Use a different approach - try to sign in with a dummy password
-            // This will fail but tell us if the user exists without sending emails
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: 'dummy_check_password_12345_invalid'
             });
-            
             if (error) {
-                // Analyze the error to determine if user exists
                 const errorMessage = error.message.toLowerCase();
-                
                 if (errorMessage.includes('invalid login credentials') || 
                     errorMessage.includes('email not confirmed') ||
                     errorMessage.includes('invalid email or password')) {
-                    // These errors indicate the user exists but credentials are wrong
-                    console.log('✅ User exists (invalid credentials error)');
                     return { exists: true };
                 } else if (errorMessage.includes('user not found') ||
                           errorMessage.includes('email not found') ||
                           errorMessage.includes('no user found')) {
-                    // These errors indicate user doesn't exist
-                    console.log('❌ User does not exist');
                     return { exists: false };
                 } else {
-                    // For unclear errors, assume user might exist (safer approach)
-                    console.log('⚠️ Unclear error, assuming user exists for safety:', error.message);
                     return { exists: true };
                 }
             }
-            
-            // If no error (very unlikely with dummy password), user exists
-            console.log('✅ User exists (unexpected success)');
             return { exists: true };
-            
         } catch (error) {
-            console.error('❌ Error checking user existence:', error);
-            // Default to assuming user doesn't exist in case of network/other errors
             return { exists: false };
         }
     }
 
-    // Sign up new user
     async signUp(email, password, metadata = {}) {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            console.log('🔐 Signing up user:', email);
-            
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: password,
@@ -104,22 +71,15 @@ class AuthService {
                     data: metadata
                 }
             });
-            
             if (error) {
-                console.error('❌ Signup error:', error);
                 throw error;
             }
-            
-            console.log('✅ Signup successful:', data);
-            
             return {
                 success: true,
                 message: 'Please check your email for verification link',
                 data: data.user
             };
-            
         } catch (error) {
-            console.error('❌ Signup failed:', error);
             return {
                 success: false,
                 message: error.message || 'Signup failed'
@@ -127,29 +87,19 @@ class AuthService {
         }
     }
     
-    // Sign in existing user
     async signIn(email, password, persistSession = false) {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            console.log('🔐 Signing in user:', email);
-            
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password
             }, {
-                // Use local persistence for 'Remember me', session for temporary
                 persistSession: persistSession ? 'local' : 'session'
             });
-            
             if (error) {
-                console.error('❌ Login error:', error);
                 throw error;
             }
-            
-            console.log('✅ Login successful:', data);
-            
             return {
                 success: true,
                 message: 'Login successful',
@@ -158,9 +108,7 @@ class AuthService {
                     session: data.session
                 }
             };
-            
         } catch (error) {
-            console.error('❌ Login failed:', error);
             return {
                 success: false,
                 message: error.message || 'Login failed'
@@ -168,20 +116,14 @@ class AuthService {
         }
     }
     
-    // Sign out user
     async signOut() {
         try {
-            // Clear refresh timeout
             if (this.refreshTokenTimeout) {
                 clearTimeout(this.refreshTokenTimeout);
                 this.refreshTokenTimeout = null;
             }
-
-            // Get stored tokens
             const accessToken = localStorage.getItem('access_token');
             const refreshToken = localStorage.getItem('refresh_token');
-
-            // Call logout endpoint to invalidate tokens server-side
             if (accessToken || refreshToken) {
                 try {
                     await fetch('/api/auth/logout', {
@@ -196,36 +138,19 @@ class AuthService {
                         })
                     });
                 } catch (logoutError) {
-                    console.error('Server logout error:', logoutError);
                 }
             }
-
-            // Clear local storage
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
             localStorage.removeItem('stepdoc_remember_me');
-
-            // Also sign out from Supabase
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            console.log('🚪 Signing out user');
-            
             const { error } = await supabase.auth.signOut();
-            
-            if (error) {
-                console.error('❌ Supabase logout error:', error);
-            }
-            
-            console.log('✅ Logout successful');
-            
             return {
                 success: true,
                 message: 'Logged out successfully'
             };
-            
         } catch (error) {
-            console.error('❌ Logout failed:', error);
             return {
                 success: false,
                 message: error.message || 'Logout failed'
@@ -233,23 +158,18 @@ class AuthService {
         }
     }
 
-    // Get current user
     async getCurrentUser() {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
             const { data: { user }, error } = await supabase.auth.getUser();
-            
             if (error) {
                 throw error;
             }
-            
             return {
                 success: true,
                 data: user
             };
-            
         } catch (error) {
             return {
                 success: false,
@@ -258,7 +178,6 @@ class AuthService {
         }
     }
 
-    // Social login wrapper
     async socialLogin(provider) {
         try {
             if (provider === 'google') {
@@ -276,34 +195,25 @@ class AuthService {
         }
     }
 
-    // Social login (Google)
     async signInWithGoogle() {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            console.log('🔐 Signing in with Google');
-            
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: `${window.location.origin}/dashboard.html`
                 }
             });
-            
             if (error) {
-                console.error('❌ Google login error:', error);
                 throw error;
             }
-            
             return {
                 success: true,
                 message: 'Redirecting to Google...',
                 data: data
             };
-            
         } catch (error) {
-            console.error('❌ Google login failed:', error);
             return {
                 success: false,
                 message: error.message || 'Google login failed'
@@ -311,34 +221,25 @@ class AuthService {
         }
     }
     
-    // Social login (GitHub)
     async signInWithGitHub() {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            console.log('🔐 Signing in with GitHub');
-            
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'github',
                 options: {
                     redirectTo: `${window.location.origin}/dashboard.html`
                 }
             });
-            
             if (error) {
-                console.error('❌ GitHub login error:', error);
                 throw error;
             }
-            
             return {
                 success: true,
                 message: 'Redirecting to GitHub...',
                 data: data
             };
-            
         } catch (error) {
-            console.error('❌ GitHub login failed:', error);
             return {
                 success: false,
                 message: error.message || 'GitHub login failed'
@@ -346,32 +247,21 @@ class AuthService {
         }
     }
 
-    // Password reset request
     async resetPassword(email) {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            console.log('🔐 Requesting password reset for:', email);
-            
-                const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: 'https://stepdoc-zeta.vercel.app/reset-password.html'
-                });
-            
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: 'https://stepdoc-zeta.vercel.app/reset-password.html'
+            });
             if (error) {
-                console.error('❌ Password reset error:', error);
                 throw error;
             }
-            
-            console.log('✅ Password reset email sent');
-            
             return {
                 success: true,
                 message: 'Password reset email sent. Please check your inbox.'
             };
-            
         } catch (error) {
-            console.error('❌ Password reset failed:', error);
             return {
                 success: false,
                 message: error.message || 'Failed to send password reset email'
@@ -379,32 +269,21 @@ class AuthService {
         }
     }
 
-    // Update password (for authenticated users)
     async updatePassword(newPassword) {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            console.log('🔐 Updating password');
-            
             const { error } = await supabase.auth.updateUser({
                 password: newPassword
             });
-            
             if (error) {
-                console.error('❌ Password update error:', error);
                 throw error;
             }
-            
-            console.log('✅ Password updated successfully');
-            
             return {
                 success: true,
                 message: 'Password updated successfully'
             };
-            
         } catch (error) {
-            console.error('❌ Password update failed:', error);
             return {
                 success: false,
                 message: error.message || 'Failed to update password'
@@ -412,30 +291,19 @@ class AuthService {
         }
     }
 
-    // Refresh session
     async refreshSession() {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            console.log('🔄 Refreshing session');
-            
             const { data, error } = await supabase.auth.refreshSession();
-            
             if (error) {
-                console.error('❌ Session refresh error:', error);
                 throw error;
             }
-            
-            console.log('✅ Session refreshed successfully');
-            
             return {
                 success: true,
                 data: data
             };
-            
         } catch (error) {
-            console.error('❌ Session refresh failed:', error);
             return {
                 success: false,
                 message: error.message || 'Failed to refresh session'
@@ -443,50 +311,36 @@ class AuthService {
         }
     }
 
-    // Test Supabase connection
     async testSupabaseConnection() {
         try {
-            console.log('🧪 Testing Supabase connection...');
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
-            
-            // Test the connection by getting session
             const { data, error } = await supabase.auth.getSession();
-            
             if (error && error.message !== 'No session' && !error.message.includes('session')) {
-                console.error('❌ Connection test failed:', error);
                 return false;
             }
-            
-            console.log('✅ Supabase connection working!');
             return true;
         } catch (error) {
-            console.error('❌ Connection test failed:', error);
             return false;
         }
     }
 
-    // Get CSRF token
     async getCSRFToken() {
         try {
             const response = await fetch('/api/csrf-token');
             const data = await response.json();
             return data.csrfToken;
         } catch (error) {
-            console.error('Failed to get CSRF token:', error);
             return '';
         }
     }
 
-    // Refresh access token
     async refreshAccessToken() {
         if (this.isRefreshing) {
             return this.refreshPromise;
         }
-
         this.isRefreshing = true;
         this.refreshPromise = this._performTokenRefresh();
-
         try {
             const result = await this.refreshPromise;
             return result;
@@ -499,11 +353,9 @@ class AuthService {
     async _performTokenRefresh() {
         try {
             const refreshToken = localStorage.getItem('refresh_token');
-            
             if (!refreshToken) {
                 throw new Error('No refresh token available');
             }
-
             const response = await fetch('/api/auth/refresh', {
                 method: 'POST',
                 headers: {
@@ -512,33 +364,21 @@ class AuthService {
                 },
                 body: JSON.stringify({ refreshToken })
             });
-
             const data = await response.json();
-
             if (!response.ok || !data.success) {
                 throw new Error(data.message || 'Token refresh failed');
             }
-
-            // Store new tokens
             localStorage.setItem('access_token', data.data.accessToken);
             localStorage.setItem('refresh_token', data.data.refreshToken);
-
-            // Schedule next refresh (13 minutes for 15-minute tokens)
             this.scheduleTokenRefresh();
-
             return {
                 success: true,
                 accessToken: data.data.accessToken,
                 refreshToken: data.data.refreshToken
             };
-
         } catch (error) {
-            console.error('Token refresh failed:', error);
-            
-            // Clear tokens and redirect to login
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
-            
             return {
                 success: false,
                 error: error.message
@@ -546,39 +386,28 @@ class AuthService {
         }
     }
 
-    // Schedule automatic token refresh
     scheduleTokenRefresh() {
-        // Clear existing timeout
         if (this.refreshTokenTimeout) {
             clearTimeout(this.refreshTokenTimeout);
         }
-
-        // Schedule refresh for 13 minutes (2 minutes before 15-minute expiry)
         this.refreshTokenTimeout = setTimeout(() => {
             this.refreshAccessToken();
-        }, 13 * 60 * 1000); // 13 minutes
+        }, 13 * 60 * 1000);
     }
 
-    // Initialize token management
     initializeTokenManagement() {
         const accessToken = localStorage.getItem('access_token');
         const refreshToken = localStorage.getItem('refresh_token');
-
         if (accessToken && refreshToken) {
-            // Schedule refresh for existing session
             this.scheduleTokenRefresh();
         }
     }
 
-    // Make authenticated API request with automatic token refresh
     async makeAuthenticatedRequest(url, options = {}) {
         let accessToken = localStorage.getItem('access_token');
-
         if (!accessToken) {
             throw new Error('No access token available');
         }
-
-        // First attempt
         const response = await fetch(url, {
             ...options,
             headers: {
@@ -587,13 +416,9 @@ class AuthService {
                 'Content-Type': 'application/json'
             }
         });
-
-        // If token expired, try to refresh
         if (response.status === 401) {
             const refreshResult = await this.refreshAccessToken();
-            
             if (refreshResult.success) {
-                // Retry with new token
                 return fetch(url, {
                     ...options,
                     headers: {
@@ -603,28 +428,18 @@ class AuthService {
                     }
                 });
             } else {
-                // Refresh failed, redirect to login
                 window.location.href = '/login';
                 throw new Error('Session expired');
             }
         }
-
         return response;
     }
 }
 
-// Create global auth service instance
 const authService = new AuthService();
-
-// Make it available globally
 if (typeof window !== 'undefined') {
     window.authService = authService;
-    
-    // Initialize token management when page loads
     document.addEventListener('DOMContentLoaded', () => {
         authService.initializeTokenManagement();
     });
 }
-
-// Log when auth service is loaded
-console.log('🔧 AuthService loaded and ready');

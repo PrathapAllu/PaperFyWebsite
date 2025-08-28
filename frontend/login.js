@@ -1,5 +1,3 @@
-// --- Moved from login.html ---
-// Supabase CDN is loaded in HTML, so window.supabase is available
 const supabaseUrl = 'https://bqemaogpiunlbdhzvlyd.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxZW1hb2dwaXVubGJkaHp2bHlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MTcwMTIsImV4cCI6MjA3MTM5MzAxMn0.TvzBF6pdrfAOLZUDISvebqYR71zKkZOX-jDlTvOMBQg';
 window.supabaseLib = window.supabase;
@@ -7,7 +5,6 @@ window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 window.supabase = window.supabaseLib;
 window.supabase.client = window.supabaseClient;
 
-// Session check logic (redirect if already logged in)
 document.addEventListener('DOMContentLoaded', async function() {
     function getSupabaseClient() {
         if (typeof window !== 'undefined' && window.supabaseClient) {
@@ -40,36 +37,26 @@ class LoginPage {
     }
 
     setupElements() {
-        // Forms
         this.loginForm = document.getElementById('loginForm');
-        
-        // Login form elements
         this.loginEmail = document.getElementById('loginEmail');
         this.loginPassword = document.getElementById('loginPassword');
         this.rememberMe = document.getElementById('rememberMe');
-        
-        // Social buttons
-    this.googleBtn = document.querySelector('.google-btn');
+        this.googleBtn = document.querySelector('.google-btn');
     }
 
     setupEventListeners() {
-        // Form submissions
         this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         
-        // Forgot password link
         const forgotLink = document.querySelector('.forgot-link');
         if (forgotLink) {
             forgotLink.addEventListener('click', (e) => this.handleForgotPassword(e));
         }
         
-        // Social login
-    this.googleBtn.addEventListener('click', () => this.handleSocialLogin('google'));
+        this.googleBtn.addEventListener('click', () => this.handleSocialLogin('google'));
         
-        // Input validation
         this.loginEmail.addEventListener('input', () => this.clearErrors());
         this.loginPassword.addEventListener('input', () => this.clearErrors());
 
-        // Password visibility toggle
         const togglePassword = document.getElementById('togglePassword');
         const eyeOpen = document.getElementById('eyeOpen');
         const eyeClosed = document.getElementById('eyeClosed');
@@ -82,7 +69,6 @@ class LoginPage {
                 togglePassword.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
                 togglePassword.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
             });
-            // Also allow keyboard toggle
             togglePassword.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -93,7 +79,6 @@ class LoginPage {
     }
 
     checkExtensionConnection() {
-        // Check if user came from the extension
         const urlParams = new URLSearchParams(window.location.search);
         const fromExtension = urlParams.get('from_extension');
         
@@ -103,22 +88,17 @@ class LoginPage {
     }
 
     checkUrlMessage() {
-        // Check for messages passed via URL (e.g., from signup page)
         const urlParams = new URLSearchParams(window.location.search);
         const message = urlParams.get('message');
         const email = urlParams.get('email');
         
         if (message) {
-            // Show a cleaner message for redirected users
             this.showSuccess(decodeURIComponent(message));
-            // Clean URL immediately to avoid persistence
             window.history.replaceState({}, document.title, window.location.pathname);
         }
         
-        // Pre-fill email if provided
         if (email && this.loginEmail) {
             this.loginEmail.value = decodeURIComponent(email);
-            // Focus on password field if email is pre-filled
             if (this.loginPassword) {
                 this.loginPassword.focus();
             }
@@ -126,7 +106,6 @@ class LoginPage {
     }
 
     showExtensionMessage() {
-        // Add a message indicating the user came from the extension
         const authHeader = document.querySelector('.auth-header');
         const extensionMsg = document.createElement('div');
         extensionMsg.className = 'extension-message';
@@ -159,20 +138,14 @@ class LoginPage {
         this.setLoadingState(submitBtn, true);
         
         try {
-            // Use auth service for login
             const result = await authService.signIn(email, password, rememberMe);
             if (result.success) {
-                // Store user data if remember me is checked
-                // No need to manually store user/session, Supabase handles persistence
-                // Send data back to extension if available
                 this.sendToExtension(result.data);
-                // Redirect immediately
                 window.location.href = 'dashboard.html';
             } else {
                 this.showError(result.message || 'Login failed', result.error);
             }
         } catch (error) {
-            console.error('Login error:', error);
             this.showError('An error occurred during login');
         } finally {
             this.setLoadingState(submitBtn, false);
@@ -195,13 +168,11 @@ class LoginPage {
         }
         
         try {
-            // Show loading state
             const forgotLink = document.querySelector('.forgot-link');
             const originalText = forgotLink.textContent;
             forgotLink.textContent = 'Sending...';
             forgotLink.style.pointerEvents = 'none';
             
-            // Use auth service for password reset
             const result = await authService.resetPassword(email);
             
             if (result.success) {
@@ -217,7 +188,6 @@ class LoginPage {
                 forgotLink.style.pointerEvents = 'auto';
             }
         } catch (error) {
-            console.error('Forgot password error:', error);
             this.showError('An error occurred while sending reset email');
             const forgotLink = document.querySelector('.forgot-link');
             forgotLink.textContent = 'Forgot password?';
@@ -227,24 +197,14 @@ class LoginPage {
 
     async handleSocialLogin(provider) {
         try {
-            console.log(`🚀 Starting ${provider} login...`);
-            
-            // Use auth service for social login
             const result = await authService.socialLogin(provider);
-            console.log(`${provider} login result:`, result);
             
             if (result.success) {
-                console.log(`✅ ${provider} login successful, redirecting...`);
-                // Send data back to extension if available
                 this.sendToExtension(result.data);
-                // Note: For OAuth, the redirect happens automatically via Supabase
-                // We don't need to manually redirect here as signInWithOAuth handles it
             } else {
-                console.error(`❌ ${provider} login failed:`, result.message);
                 this.showError(result.message || `Failed to login with ${provider}`, result.error);
             }
         } catch (error) {
-            console.error(`❌ ${provider} login error:`, error);
             this.showError(`An error occurred with ${provider} login: ${error.message || 'Unknown error'}`);
         }
     }
@@ -277,25 +237,18 @@ class LoginPage {
 
     sendToExtension(userData) {
         try {
-            // Check if we're in an extension context
             if (window.chrome && window.chrome.runtime && window.chrome.runtime.onMessage) {
-                // Send message to extension
                 window.chrome.runtime.sendMessage({
                     type: 'LOGIN_SUCCESS',
                     userData: userData
                 });
-                console.log('Login data sent to extension');
             } else if (window.opener) {
-                // If opened as popup, send message to parent window
                 window.opener.postMessage({
                     type: 'LOGIN_SUCCESS',
                     userData: userData
                 }, '*');
-                console.log('Login data sent to parent window');
             }
         } catch (error) {
-            console.log('Extension communication not available:', error);
-            // This is expected when not running in extension context
         }
     }
 
@@ -306,7 +259,6 @@ class LoginPage {
             existingError.remove();
         }
         
-        // Handle enhanced error responses
         let displayMessage = message;
         let suggestions = [];
         let fieldErrors = [];
@@ -316,7 +268,6 @@ class LoginPage {
             suggestions = errorData.suggestions || [];
             fieldErrors = errorData.fields || [];
             
-            // Show field-specific errors
             if (fieldErrors.length > 0) {
                 fieldErrors.forEach(fieldError => {
                     this.showFieldError(fieldError.field, fieldError.message);
@@ -362,19 +313,16 @@ class LoginPage {
         if (field) {
             field.classList.add('error');
             
-            // Remove existing field error
             const existingFieldError = field.parentNode.querySelector('.field-error');
             if (existingFieldError) {
                 existingFieldError.remove();
             }
             
-            // Add new field error
             const fieldErrorDiv = document.createElement('div');
             fieldErrorDiv.className = 'field-error';
             fieldErrorDiv.textContent = message;
             field.parentNode.appendChild(fieldErrorDiv);
             
-            // Remove error styling when user starts typing
             const removeError = () => {
                 field.classList.remove('error');
                 if (fieldErrorDiv.parentNode) {
@@ -418,12 +366,11 @@ class LoginPage {
         if (successMessage) successMessage.remove();
     }
 
-    // Utility: Update privacy policy last updated date every five days
     static updatePrivacyLastUpdated() {
         const lastUpdatedElem = document.getElementById('lastUpdated');
         if (!lastUpdatedElem) return;
         const now = new Date();
-        const baseDate = new Date('2025-08-27'); // initial date
+        const baseDate = new Date('2025-08-27');
         const msInDay = 24 * 60 * 60 * 1000;
         const daysSinceBase = Math.floor((now - baseDate) / msInDay);
         const lastUpdateDays = daysSinceBase - (daysSinceBase % 5);
@@ -433,55 +380,37 @@ class LoginPage {
     }
 }
 
-// Initialize login page when DOM is loaded
-
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Initializing login page...');
     try {
-        // Wait for services to be available with more detailed logging
         let attempts = 0;
         const maxAttempts = 50;
-        console.log('⏳ Waiting for services to load...');
         while (attempts < maxAttempts) {
             const supabaseAvailable = typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function';
             const authServiceAvailable = typeof authService !== 'undefined' && typeof authService.waitForSupabase === 'function';
-            console.log(`Attempt ${attempts + 1}: Supabase=${supabaseAvailable}, AuthService=${authServiceAvailable}`);
             if (supabaseAvailable && authServiceAvailable) {
-                console.log('✅ All services loaded successfully');
                 break;
             }
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
         if (attempts >= maxAttempts) {
-            console.error('❌ Services not available after 5 seconds');
             throw new Error('Services not available after waiting');
         }
-        // Wait for Supabase to be properly initialized
-        console.log('⏳ Waiting for Supabase initialization...');
         await authService.waitForSupabase();
-        // Test the connection
-        console.log('🔍 Testing Supabase connection...');
         const connectionTest = await authService.testSupabaseConnection();
         if (!connectionTest) {
             throw new Error('Supabase connection test failed');
         }
 
-        // Check if user is already logged in and Remember Me is enabled
         const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
         const userCheck = await authService.getCurrentUser();
         if (rememberMeFlag && userCheck.success && userCheck.data) {
-            console.log('🔒 User already logged in with Remember Me, redirecting to dashboard...');
             window.location.href = 'dashboard.html';
             return;
         }
 
-        // Initialize login page
         new LoginPage();
-        console.log('✅ Login page initialized successfully');
     } catch (error) {
-        console.error('❌ Failed to initialize login page:', error);
-        console.error('Error details:', error);
         alert('Authentication service not available. Please refresh the page.');
     }
 });
