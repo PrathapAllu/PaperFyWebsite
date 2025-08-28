@@ -22,9 +22,6 @@
       window.addEventListener("unhandledrejection", (evt) => {
         sendError(evt.reason);
       });
-    </script>
-
-    <script type="module">
       import RefreshRuntime from "/@react-refresh";
       RefreshRuntime.injectIntoGlobalHook(window);
       window.$RefreshReg$ = () => {};
@@ -2755,6 +2752,32 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
           line-height: 1.1;
         }
       }
+.toggle-button {
+  display: inline-flex;
+  border-radius: 9999px;
+  overflow: hidden;
+  background-color: #f1f5f9; /* cool-gray-100 */
+  padding: 4px;
+}
+
+.toggle-button button {
+  padding: 8px 24px;
+  border: none;
+  background-color: transparent;
+  color: #4b5a70; /* cool-gray-600 */
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 9999px;
+}
+
+.toggle-button button.active {
+  background-color: #3b4bdd; /* indigo-400 */
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
 
       .sr-only {
         position: absolute;
@@ -9637,11 +9660,20 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
               <p
                 data-replit-metadata="client/src/components/pricing-section.tsx:65:10"
                 data-component-name="p"
-                class="text-xl text-stepdoc-slate-600 max-w-3xl mx-auto"
+                class="text-xl text-stepdoc-slate-600 max-w-3xl mx-auto mb-8"
               >
                 Professional-grade documentation tools at a fraction of the
                 cost. No hidden fees, no vendor lock-in.
               </p>
+              
+              <!-- Pricing Toggle -->
+  <div class="flex justify-center mb-8">
+  <div class="toggle-button">
+    <button id="monthlyBtn" class="active">Monthly</button>
+    <button id="yearlyBtn">Yearly <span class="bg-blue-200 text-blue-800 text-xs font-bold mr-2 px-2.5 py-0.5 rounded-full">20% OFF</span></button>
+  </div>
+</div>
+
             </div>
             <div
               data-replit-metadata="client/src/components/pricing-section.tsx:70:8"
@@ -9666,7 +9698,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
                   data-component-name="div"
                   class="text-4xl font-bold mb-2 text-stepdoc-slate-900"
                 >
-                  $0
+                  <span id="free-price">$0</span>
                 </div>
                 <p
                   data-replit-metadata="client/src/components/pricing-section.tsx:99:12"
@@ -9797,14 +9829,14 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
                   data-component-name="div"
                   class="text-4xl font-bold mb-2 text-white"
                 >
-                  $9.99
+                  <span id="pro-price" class="price" data-base-price="9.99">$9.99</span>
                 </div>
                 <p
                   data-replit-metadata="client/src/components/pricing-section.tsx:94:12"
                   data-component-name="p"
                   class="mb-6 text-blue-100"
                 >
-                  per month
+                  <span id="pro-period" class="billing-period">per month</span>
                 </p>
                 <ul
                   data-replit-metadata="client/src/components/pricing-section.tsx:104:14"
@@ -9975,14 +10007,14 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
                   data-component-name="div"
                   class="text-4xl font-bold mb-2 text-stepdoc-slate-900"
                 >
-                  $14.99
+                  <span id="proplus-price" class="price" data-base-price="14.99">$14.99</span>
                 </div>
                 <p
                   data-replit-metadata="client/src/components/pricing-section.tsx:94:12"
                   data-component-name="p"
                   class="mb-6 text-stepdoc-slate-600"
                 >
-                  per month
+                  <span id="proplus-period" class="billing-period">per month</span>
                 </p>
                 <ul
                   data-replit-metadata="client/src/components/pricing-section.tsx:104:14"
@@ -10599,6 +10631,24 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       type="text/javascript"
       src="https://replit.com/public/js/replit-dev-banner.js"
     ></script>
+<script>
+  const monthlyBtn = document.getElementById('monthlyBtn');
+  const yearlyBtn = document.getElementById('yearlyBtn');
+
+  monthlyBtn.addEventListener('click', () => {
+    if (!monthlyBtn.classList.contains('active')) {
+      monthlyBtn.classList.add('active');
+      yearlyBtn.classList.remove('active');
+    }
+  });
+
+  yearlyBtn.addEventListener('click', () => {
+    if (!yearlyBtn.classList.contains('active')) {
+      yearlyBtn.classList.add('active');
+      monthlyBtn.classList.remove('active');
+    }
+  });
+</script>
 
     <script>
       // Navbar scroll behavior - updated for full-screen hero
@@ -10720,6 +10770,43 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
           });
         }
       });
+
+      // Pricing Toggle Functionality
+      function togglePricing(period) {
+  const monthlyBtn = document.getElementById('monthlyBtn');
+  const yearlyBtn = document.getElementById('yearlyBtn');
+        
+        if (period === 'monthly') {
+          // Update toggle buttons
+          monthlyBtn.classList.add('bg-purple-500', 'text-white');
+          monthlyBtn.classList.remove('text-stepdoc-slate-700', 'hover:text-stepdoc-slate-900');
+          yearlyBtn.classList.remove('bg-purple-500', 'text-white');
+          yearlyBtn.classList.add('text-stepdoc-slate-700', 'hover:text-stepdoc-slate-900');
+          
+          // Update prices
+          document.getElementById('pro-price').textContent = '$9.99';
+          document.getElementById('proplus-price').textContent = '$14.99';
+          document.getElementById('pro-period').textContent = 'per month';
+          document.getElementById('proplus-period').textContent = 'per month';
+        } else {
+          // Update toggle buttons
+          yearlyBtn.classList.add('bg-purple-500', 'text-white');
+          yearlyBtn.classList.remove('text-stepdoc-slate-700', 'hover:text-stepdoc-slate-900');
+          monthlyBtn.classList.remove('bg-purple-500', 'text-white');
+          monthlyBtn.classList.add('text-stepdoc-slate-700', 'hover:text-stepdoc-slate-900');
+          
+          // Update prices (20% off for yearly)
+          document.getElementById('pro-price').textContent = '$7.99';
+          document.getElementById('proplus-price').textContent = '$11.99';
+          document.getElementById('pro-period').textContent = 'per month';
+          document.getElementById('proplus-period').textContent = 'per month';
+        }
+      }
+
+      // Initialize with monthly selected
+      document.addEventListener('DOMContentLoaded', function() {
+        togglePricing('monthly');
+      });
     </script>
 
     <scribe-shadow
@@ -10737,4 +10824,50 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       "
     ></scribe-shadow>
   </body>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const monthlyBtn = document.getElementById('monthlyBtn');
+      const yearlyBtn = document.getElementById('yearlyBtn');
+      const priceElements = document.querySelectorAll('.price');
+      const billingPeriodElements = document.querySelectorAll('.billing-period');
+
+      function updatePricing(isYearly) {
+        // Toggle active class on buttons
+        if (isYearly) {
+          yearlyBtn.classList.add('active');
+          monthlyBtn.classList.remove('active');
+        } else {
+          monthlyBtn.classList.add('active');
+          yearlyBtn.classList.remove('active');
+        }
+
+        // Update price and billing period text
+        priceElements.forEach(priceEl => {
+          const basePrice = parseFloat(priceEl.getAttribute('data-base-price'));
+          if (isYearly) {
+            const yearlyPrice = (basePrice * 12 * 0.8).toFixed(2); // Calculate total annual price with 20% discount
+            const pricePerMonth = (yearlyPrice / 12).toFixed(2);
+            priceEl.textContent = `$${pricePerMonth}`;
+          } else {
+            priceEl.textContent = `$${basePrice.toFixed(2)}`;
+          }
+        });
+
+        billingPeriodElements.forEach(periodEl => {
+          if (isYearly) {
+            periodEl.textContent = 'per month, billed annually';
+          } else {
+            periodEl.textContent = 'per month';
+          }
+        });
+      }
+
+      // Set initial state
+      updatePricing(false);
+
+      // Add click listeners
+      monthlyBtn.addEventListener('click', () => updatePricing(false));
+      yearlyBtn.addEventListener('click', () => updatePricing(true));
+    });
+  </script>
 </html>
