@@ -1,16 +1,53 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Rate limiting middleware
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: {
+        success: false,
+        message: 'Too many requests from this IP, please try again later.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Limit each IP to 5 auth attempts per windowMs
+    message: {
+        success: false,
+        message: 'Too many authentication attempts, please try again in 15 minutes.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true, // Don't count successful requests
+});
+
+const strictAuthLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // Limit each IP to 10 login attempts per hour
+    message: {
+        success: false,
+        message: 'Account temporarily locked due to too many failed login attempts. Please try again in 1 hour.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
+app.use('/api/', generalLimiter); // Apply general rate limiting to all API routes
 
 // Routes
 app.get('/', (req, res) => {
@@ -43,7 +80,7 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 // Email/Password Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, strictAuthLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
         
@@ -51,14 +88,14 @@ app.post('/api/auth/login', async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Email and password are required' 
+                message: 'Please enter both email and password.' 
             });
         }
 
         if (!isValidEmail(email)) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Please provide a valid email address' 
+                message: 'Please enter a valid email address.' 
             });
         }
 
@@ -69,10 +106,10 @@ app.post('/api/auth/login', async (req, res) => {
         });
 
         if (error) {
-            console.error('Login error:', error);
+            console.error('Login error:', error.message); // Log for debugging but don't expose
             return res.status(401).json({ 
                 success: false, 
-                message: error.message || 'Invalid credentials' 
+                message: sanitizeErrorMessage(error, 'Invalid email or password. Please check your credentials and try again.') 
             });
         }
 
@@ -90,13 +127,13 @@ app.post('/api/auth/login', async (req, res) => {
         console.error('Login endpoint error:', error);
         res.status(500).json({ 
             success: false, 
-            message: 'Internal server error' 
+            message: 'Unable to process login request. Please try again later.' 
         });
     }
 });
 
 // Email/Password Signup
-app.post('/api/auth/signup', async (req, res) => {
+app.post('/api/auth/signup', authLimiter, async (req, res) => {
     try {
         const { email, password, metadata = {} } = req.body;
         
@@ -104,21 +141,21 @@ app.post('/api/auth/signup', async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Email and password are required' 
+                message: 'Please enter both email and password.' 
             });
         }
 
         if (!isValidEmail(email)) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Please provide a valid email address' 
+                message: 'Please enter a valid email address.' 
             });
         }
 
         if (password.length < 6) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Password must be at least 6 characters long' 
+                message: 'Password must be at least 6 characters long.' 
             });
         }
 
@@ -132,17 +169,17 @@ app.post('/api/auth/signup', async (req, res) => {
         });
 
         if (error) {
-            console.error('Signup error:', error);
+            console.error('Signup error:', error.message); // Log for debugging but don't expose
             return res.status(400).json({ 
                 success: false, 
-                message: error.message || 'Signup failed' 
+                message: sanitizeErrorMessage(error, 'Unable to create account. Please try again.') 
             });
         }
 
         // Success response
         res.json({ 
             success: true, 
-            message: 'Please check your email for verification link',
+            message: 'Account created successfully! Please check your email for the verification link.',
             data: {
                 user: data.user,
                 session: data.session
@@ -153,13 +190,13 @@ app.post('/api/auth/signup', async (req, res) => {
         console.error('Signup endpoint error:', error);
         res.status(500).json({ 
             success: false, 
-            message: 'Internal server error' 
+            message: 'Unable to process registration. Please try again later.' 
         });
     }
 });
 
 // OAuth Login
-app.post('/api/auth/oauth/:provider', async (req, res) => {
+app.post('/api/auth/oauth/:provider', authLimiter, async (req, res) => {
     try {
         const { provider } = req.params;
         const { redirectTo } = req.body;
@@ -207,46 +244,46 @@ app.post('/api/auth/oauth/:provider', async (req, res) => {
 });
 
 // Password Reset
-app.post('/api/auth/reset-password', async (req, res) => {
+app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
     try {
         const { email } = req.body;
 
         if (!email) {
             return res.status(400).json({
                 success: false,
-                message: 'Email is required'
+                message: 'Please enter your email address.'
             });
         }
 
         if (!isValidEmail(email)) {
             return res.status(400).json({
                 success: false,
-                message: 'Please provide a valid email address'
+                message: 'Please enter a valid email address.'
             });
         }
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${req.protocol}://${req.get('host')}/reset-password`
+            redirectTo: 'https://stepdoc-zeta.vercel.app/reset-password.html'
         });
 
         if (error) {
-            console.error('Password reset error:', error);
+            console.error('Password reset error:', error.message); // Log for debugging but don't expose
             return res.status(400).json({
                 success: false,
-                message: error.message || 'Failed to send reset email'
+                message: sanitizeErrorMessage(error, 'Unable to send password reset email. Please try again.')
             });
         }
 
         res.json({
             success: true,
-            message: 'Password reset email sent'
+            message: 'If an account with that email exists, a password reset link has been sent.'
         });
 
     } catch (error) {
         console.error('Password reset endpoint error:', error);
         res.status(500).json({
             success: false,
-            message: 'Internal server error'
+            message: 'Unable to process password reset request. Please try again later.'
         });
     }
 });
@@ -475,6 +512,57 @@ const optionalAuth = async (req, res, next) => {
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+}
+
+// Error message sanitization function
+function sanitizeErrorMessage(error, fallbackMessage = 'An error occurred') {
+    if (!error) return fallbackMessage;
+    
+    const errorMessage = typeof error === 'string' ? error : error.message;
+    
+    // Map of Supabase error messages to user-friendly messages
+    const errorMappings = {
+        'Invalid login credentials': 'Invalid email or password. Please check your credentials and try again.',
+        'Email not confirmed': 'Please check your email and click the confirmation link before signing in.',
+        'Too many requests': 'Too many attempts. Please wait a few minutes before trying again.',
+        'User already registered': 'An account with this email already exists. Please sign in instead.',
+        'Password should be at least 6 characters': 'Password must be at least 6 characters long.',
+        'Unable to validate email address': 'Please enter a valid email address.',
+        'signup is disabled': 'Account registration is currently disabled. Please contact support.',
+        'Email rate limit exceeded': 'Too many email requests. Please wait before requesting another.',
+    };
+    
+    // Check for exact matches first
+    if (errorMappings[errorMessage]) {
+        return errorMappings[errorMessage];
+    }
+    
+    // Check for partial matches
+    for (const [key, value] of Object.entries(errorMappings)) {
+        if (errorMessage.toLowerCase().includes(key.toLowerCase())) {
+            return value;
+        }
+    }
+    
+    // For authentication errors, provide generic message
+    if (errorMessage.toLowerCase().includes('auth') || 
+        errorMessage.toLowerCase().includes('login') || 
+        errorMessage.toLowerCase().includes('password') ||
+        errorMessage.toLowerCase().includes('credential')) {
+        return 'Authentication failed. Please check your credentials and try again.';
+    }
+    
+    // For validation errors, be more specific
+    if (errorMessage.toLowerCase().includes('email')) {
+        return 'Please enter a valid email address.';
+    }
+    
+    if (errorMessage.toLowerCase().includes('password')) {
+        return 'Password requirements not met. Please ensure it meets the minimum requirements.';
+    }
+    
+    // Default fallback for any other errors
+    return fallbackMessage;
 }
 
 // Payment API (placeholder for Stripe integration)

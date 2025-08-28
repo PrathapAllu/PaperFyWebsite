@@ -317,9 +317,9 @@ class AuthService {
             
             console.log('🔐 Requesting password reset for:', email);
             
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/reset-password`
-            });
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: 'https://stepdoc-zeta.vercel.app/reset-password.html'
+                });
             
             if (error) {
                 console.error('❌ Password reset error:', error);
