@@ -309,6 +309,103 @@ class AuthService {
         }
     }
 
+    // Password reset request
+    async resetPassword(email) {
+        try {
+            await this.waitForSupabase();
+            const supabase = this.getSupabaseClient();
+            
+            console.log('🔐 Requesting password reset for:', email);
+            
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`
+            });
+            
+            if (error) {
+                console.error('❌ Password reset error:', error);
+                throw error;
+            }
+            
+            console.log('✅ Password reset email sent');
+            
+            return {
+                success: true,
+                message: 'Password reset email sent. Please check your inbox.'
+            };
+            
+        } catch (error) {
+            console.error('❌ Password reset failed:', error);
+            return {
+                success: false,
+                message: error.message || 'Failed to send password reset email'
+            };
+        }
+    }
+
+    // Update password (for authenticated users)
+    async updatePassword(newPassword) {
+        try {
+            await this.waitForSupabase();
+            const supabase = this.getSupabaseClient();
+            
+            console.log('🔐 Updating password');
+            
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword
+            });
+            
+            if (error) {
+                console.error('❌ Password update error:', error);
+                throw error;
+            }
+            
+            console.log('✅ Password updated successfully');
+            
+            return {
+                success: true,
+                message: 'Password updated successfully'
+            };
+            
+        } catch (error) {
+            console.error('❌ Password update failed:', error);
+            return {
+                success: false,
+                message: error.message || 'Failed to update password'
+            };
+        }
+    }
+
+    // Refresh session
+    async refreshSession() {
+        try {
+            await this.waitForSupabase();
+            const supabase = this.getSupabaseClient();
+            
+            console.log('🔄 Refreshing session');
+            
+            const { data, error } = await supabase.auth.refreshSession();
+            
+            if (error) {
+                console.error('❌ Session refresh error:', error);
+                throw error;
+            }
+            
+            console.log('✅ Session refreshed successfully');
+            
+            return {
+                success: true,
+                data: data
+            };
+            
+        } catch (error) {
+            console.error('❌ Session refresh failed:', error);
+            return {
+                success: false,
+                message: error.message || 'Failed to refresh session'
+            };
+        }
+    }
+
     // Test Supabase connection
     async testSupabaseConnection() {
         try {

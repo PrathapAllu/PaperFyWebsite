@@ -56,6 +56,12 @@ class LoginPage {
         // Form submissions
         this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         
+        // Forgot password link
+        const forgotLink = document.querySelector('.forgot-link');
+        if (forgotLink) {
+            forgotLink.addEventListener('click', (e) => this.handleForgotPassword(e));
+        }
+        
         // Social login
     this.googleBtn.addEventListener('click', () => this.handleSocialLogin('google'));
         
@@ -170,6 +176,52 @@ class LoginPage {
             this.showError('An error occurred during login');
         } finally {
             this.setLoadingState(submitBtn, false);
+        }
+    }
+
+    async handleForgotPassword(e) {
+        e.preventDefault();
+        
+        const email = this.loginEmail.value.trim();
+        
+        if (!email) {
+            this.showError('Please enter your email address first');
+            return;
+        }
+        
+        if (!this.isValidEmail(email)) {
+            this.showError('Please enter a valid email address');
+            return;
+        }
+        
+        try {
+            // Show loading state
+            const forgotLink = document.querySelector('.forgot-link');
+            const originalText = forgotLink.textContent;
+            forgotLink.textContent = 'Sending...';
+            forgotLink.style.pointerEvents = 'none';
+            
+            // Use auth service for password reset
+            const result = await authService.resetPassword(email);
+            
+            if (result.success) {
+                this.showSuccess(result.message);
+                forgotLink.textContent = 'Email sent!';
+                setTimeout(() => {
+                    forgotLink.textContent = originalText;
+                    forgotLink.style.pointerEvents = 'auto';
+                }, 3000);
+            } else {
+                this.showError(result.message || 'Failed to send reset email');
+                forgotLink.textContent = originalText;
+                forgotLink.style.pointerEvents = 'auto';
+            }
+        } catch (error) {
+            console.error('Forgot password error:', error);
+            this.showError('An error occurred while sending reset email');
+            const forgotLink = document.querySelector('.forgot-link');
+            forgotLink.textContent = 'Forgot password?';
+            forgotLink.style.pointerEvents = 'auto';
         }
     }
 
