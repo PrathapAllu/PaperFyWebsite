@@ -127,14 +127,26 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'StepDoc API is running' });
 });
 
-// Input validation middleware
+// Enhanced input validation middleware
 const validateInput = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        const formattedErrors = errors.array().map(error => ({
+            field: error.path || error.param,
+            message: error.msg,
+            value: error.value,
+            location: error.location
+        }));
+        
         return res.status(400).json({
             success: false,
-            message: 'Invalid input data',
-            errors: errors.array()
+            message: 'Validation failed',
+            error: {
+                type: 'VALIDATION_ERROR',
+                code: 'INVALID_INPUT',
+                details: 'Please check the highlighted fields and try again.',
+                fields: formattedErrors
+            }
         });
     }
     next();
@@ -384,16 +396,33 @@ app.post('/api/auth/login',
         
         // Validation
         if (!email || !password) {
+            const errorResponse = createErrorResponse('Missing required fields', { endpoint: 'login', fields: ['email', 'password'] });
             return res.status(400).json({ 
                 success: false, 
-                message: 'Please enter both email and password.' 
+                message: 'Please enter both email and password.',
+                error: {
+                    ...errorResponse,
+                    type: 'VALIDATION_ERROR',
+                    code: 'MISSING_FIELDS',
+                    fields: [
+                        ...((!email) ? [{ field: 'email', message: 'Email is required' }] : []),
+                        ...((!password) ? [{ field: 'password', message: 'Password is required' }] : [])
+                    ]
+                }
             });
         }
 
         if (!isValidEmail(email)) {
+            const errorResponse = createErrorResponse('Invalid email format', { endpoint: 'login', email });
             return res.status(400).json({ 
                 success: false, 
-                message: 'Please enter a valid email address.' 
+                message: 'Please enter a valid email address.',
+                error: {
+                    ...errorResponse,
+                    type: 'VALIDATION_ERROR',
+                    code: 'INVALID_EMAIL',
+                    fields: [{ field: 'email', message: 'Please enter a valid email address' }]
+                }
             });
         }
 
@@ -404,10 +433,12 @@ app.post('/api/auth/login',
         });
 
         if (error) {
-            console.error('Login error:', error.message); // Log for debugging but don't expose
+            console.error('Login error:', error.message);
+            const errorResponse = createErrorResponse(error, { endpoint: 'login', email });
             return res.status(401).json({ 
                 success: false, 
-                message: sanitizeErrorMessage(error, 'Invalid email or password. Please check your credentials and try again.') 
+                message: errorResponse.message,
+                error: errorResponse
             });
         }
 
@@ -423,9 +454,11 @@ app.post('/api/auth/login',
 
     } catch (error) {
         console.error('Login endpoint error:', error);
+        const errorResponse = createErrorResponse(error, { endpoint: 'login' });
         res.status(500).json({ 
             success: false, 
-            message: 'Unable to process login request. Please try again later.' 
+            message: errorResponse.message,
+            error: errorResponse
         });
     }
 });
@@ -453,23 +486,47 @@ app.post('/api/auth/signup',
         
         // Validation
         if (!email || !password) {
+            const errorResponse = createErrorResponse('Missing required fields', { endpoint: 'signup', fields: ['email', 'password'] });
             return res.status(400).json({ 
                 success: false, 
-                message: 'Please enter both email and password.' 
+                message: 'Please enter both email and password.',
+                error: {
+                    ...errorResponse,
+                    type: 'VALIDATION_ERROR',
+                    code: 'MISSING_FIELDS',
+                    fields: [
+                        ...((!email) ? [{ field: 'email', message: 'Email is required' }] : []),
+                        ...((!password) ? [{ field: 'password', message: 'Password is required' }] : [])
+                    ]
+                }
             });
         }
 
         if (!isValidEmail(email)) {
+            const errorResponse = createErrorResponse('Invalid email format', { endpoint: 'signup', email });
             return res.status(400).json({ 
                 success: false, 
-                message: 'Please enter a valid email address.' 
+                message: 'Please enter a valid email address.',
+                error: {
+                    ...errorResponse,
+                    type: 'VALIDATION_ERROR',
+                    code: 'INVALID_EMAIL',
+                    fields: [{ field: 'email', message: 'Please enter a valid email address' }]
+                }
             });
         }
 
-        if (password.length < 6) {
+        if (password.length < 8) {
+            const errorResponse = createErrorResponse('Password too short', { endpoint: 'signup' });
             return res.status(400).json({ 
                 success: false, 
-                message: 'Password must be at least 6 characters long.' 
+                message: 'Password must be at least 8 characters long.',
+                error: {
+                    ...errorResponse,
+                    type: 'VALIDATION_ERROR',
+                    code: 'PASSWORD_TOO_SHORT',
+                    fields: [{ field: 'password', message: 'Password must be at least 8 characters long' }]
+                }
             });
         }
 
@@ -483,10 +540,12 @@ app.post('/api/auth/signup',
         });
 
         if (error) {
-            console.error('Signup error:', error.message); // Log for debugging but don't expose
+            console.error('Signup error:', error.message);
+            const errorResponse = createErrorResponse(error, { endpoint: 'signup', email });
             return res.status(400).json({ 
                 success: false, 
-                message: sanitizeErrorMessage(error, 'Unable to create account. Please try again.') 
+                message: errorResponse.message,
+                error: errorResponse
             });
         }
 
@@ -502,9 +561,11 @@ app.post('/api/auth/signup',
 
     } catch (error) {
         console.error('Signup endpoint error:', error);
+        const errorResponse = createErrorResponse(error, { endpoint: 'signup' });
         res.status(500).json({ 
             success: false, 
-            message: 'Unable to process registration. Please try again later.' 
+            message: errorResponse.message,
+            error: errorResponse
         });
     }
 });
@@ -600,10 +661,12 @@ app.post('/api/auth/reset-password',
         });
 
         if (error) {
-            console.error('Password reset error:', error.message); // Log for debugging but don't expose
+            console.error('Password reset error:', error.message);
+            const errorResponse = createErrorResponse(error, { endpoint: 'reset-password', email });
             return res.status(400).json({
                 success: false,
-                message: sanitizeErrorMessage(error, 'Unable to send password reset email. Please try again.')
+                message: errorResponse.message,
+                error: errorResponse
             });
         }
 
@@ -614,9 +677,11 @@ app.post('/api/auth/reset-password',
 
     } catch (error) {
         console.error('Password reset endpoint error:', error);
+        const errorResponse = createErrorResponse(error, { endpoint: 'reset-password' });
         res.status(500).json({
             success: false,
-            message: 'Unable to process password reset request. Please try again later.'
+            message: errorResponse.message,
+            error: errorResponse
         });
     }
 });
@@ -1004,55 +1069,189 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-// Error message sanitization function
-function sanitizeErrorMessage(error, fallbackMessage = 'An error occurred') {
-    if (!error) return fallbackMessage;
+// Enhanced error handling function
+function createErrorResponse(error, context = {}) {
+    if (!error) {
+        return {
+            type: 'UNKNOWN_ERROR',
+            code: 'GENERIC_ERROR',
+            message: 'An unexpected error occurred',
+            details: 'Please try again later or contact support if the problem persists.',
+            suggestions: ['Refresh the page and try again', 'Check your internet connection']
+        };
+    }
     
     const errorMessage = typeof error === 'string' ? error : error.message;
+    const errorCode = error.code || 'UNKNOWN';
     
-    // Map of Supabase error messages to user-friendly messages
+    // Enhanced error mappings with detailed responses
     const errorMappings = {
-        'Invalid login credentials': 'Invalid email or password. Please check your credentials and try again.',
-        'Email not confirmed': 'Please check your email and click the confirmation link before signing in.',
-        'Too many requests': 'Too many attempts. Please wait a few minutes before trying again.',
-        'User already registered': 'An account with this email already exists. Please sign in instead.',
-        'Password should be at least 6 characters': 'Password must be at least 6 characters long.',
-        'Unable to validate email address': 'Please enter a valid email address.',
-        'signup is disabled': 'Account registration is currently disabled. Please contact support.',
-        'Email rate limit exceeded': 'Too many email requests. Please wait before requesting another.',
+        'Invalid login credentials': {
+            type: 'AUTH_ERROR',
+            code: 'INVALID_CREDENTIALS',
+            message: 'Invalid email or password',
+            details: 'The email or password you entered is incorrect.',
+            suggestions: [
+                'Double-check your email address for typos',
+                'Verify your password is correct',
+                'Try resetting your password if you\'ve forgotten it',
+                'Make sure Caps Lock is not enabled'
+            ]
+        },
+        'Email not confirmed': {
+            type: 'AUTH_ERROR',
+            code: 'EMAIL_NOT_VERIFIED',
+            message: 'Email address not verified',
+            details: 'Please verify your email address before signing in.',
+            suggestions: [
+                'Check your email inbox for a verification message',
+                'Look in your spam/junk folder',
+                'Request a new verification email',
+                'Make sure you clicked the verification link'
+            ]
+        },
+        'Too many requests': {
+            type: 'RATE_LIMIT_ERROR',
+            code: 'TOO_MANY_ATTEMPTS',
+            message: 'Too many login attempts',
+            details: 'Your account has been temporarily locked due to multiple failed login attempts.',
+            suggestions: [
+                'Wait 15 minutes before trying again',
+                'Reset your password if you\'ve forgotten it',
+                'Contact support if you believe this is an error'
+            ],
+            retryAfter: 900 // 15 minutes in seconds
+        },
+        'User already registered': {
+            type: 'AUTH_ERROR',
+            code: 'USER_EXISTS',
+            message: 'Account already exists',
+            details: 'An account with this email address already exists.',
+            suggestions: [
+                'Try signing in instead of creating a new account',
+                'Use the "Forgot Password" option if you can\'t remember your password',
+                'Contact support if you believe this is an error'
+            ]
+        },
+        'Password should be at least 6 characters': {
+            type: 'VALIDATION_ERROR',
+            code: 'PASSWORD_TOO_SHORT',
+            message: 'Password too short',
+            details: 'Password must be at least 8 characters long.',
+            suggestions: [
+                'Use at least 8 characters',
+                'Include uppercase and lowercase letters',
+                'Add numbers and special characters for better security'
+            ]
+        },
+        'Unable to validate email address': {
+            type: 'VALIDATION_ERROR',
+            code: 'INVALID_EMAIL',
+            message: 'Invalid email address',
+            details: 'Please enter a valid email address.',
+            suggestions: [
+                'Check for typos in your email address',
+                'Make sure the email format is correct (user@domain.com)',
+                'Verify the domain name is spelled correctly'
+            ]
+        },
+        'signup is disabled': {
+            type: 'SERVICE_ERROR',
+            code: 'SIGNUP_DISABLED',
+            message: 'Registration temporarily unavailable',
+            details: 'New account registration is currently disabled.',
+            suggestions: [
+                'Try again later',
+                'Contact support for assistance',
+                'Sign in if you already have an account'
+            ]
+        }
     };
     
     // Check for exact matches first
-    if (errorMappings[errorMessage]) {
-        return errorMappings[errorMessage];
-    }
-    
-    // Check for partial matches
-    for (const [key, value] of Object.entries(errorMappings)) {
+    for (const [key, errorResponse] of Object.entries(errorMappings)) {
         if (errorMessage.toLowerCase().includes(key.toLowerCase())) {
-            return value;
+            return { ...errorResponse, originalError: errorCode };
         }
     }
     
-    // For authentication errors, provide generic message
+    // Category-based error handling
     if (errorMessage.toLowerCase().includes('auth') || 
         errorMessage.toLowerCase().includes('login') || 
-        errorMessage.toLowerCase().includes('password') ||
         errorMessage.toLowerCase().includes('credential')) {
-        return 'Authentication failed. Please check your credentials and try again.';
+        return {
+            type: 'AUTH_ERROR',
+            code: 'AUTHENTICATION_FAILED',
+            message: 'Authentication failed',
+            details: 'Unable to verify your credentials.',
+            suggestions: [
+                'Check your email and password',
+                'Try resetting your password',
+                'Contact support if the problem persists'
+            ],
+            originalError: errorCode
+        };
     }
     
-    // For validation errors, be more specific
     if (errorMessage.toLowerCase().includes('email')) {
-        return 'Please enter a valid email address.';
+        return {
+            type: 'VALIDATION_ERROR',
+            code: 'EMAIL_INVALID',
+            message: 'Invalid email address',
+            details: 'The email address format is not valid.',
+            suggestions: [
+                'Check for typos in your email',
+                'Ensure the format is correct (user@domain.com)'
+            ],
+            originalError: errorCode
+        };
     }
     
     if (errorMessage.toLowerCase().includes('password')) {
-        return 'Password requirements not met. Please ensure it meets the minimum requirements.';
+        return {
+            type: 'VALIDATION_ERROR',
+            code: 'PASSWORD_INVALID',
+            message: 'Password requirements not met',
+            details: 'Your password does not meet the security requirements.',
+            suggestions: [
+                'Use at least 8 characters',
+                'Include uppercase and lowercase letters',
+                'Add numbers and special characters'
+            ],
+            originalError: errorCode
+        };
     }
     
-    // Default fallback for any other errors
-    return fallbackMessage;
+    if (errorMessage.toLowerCase().includes('network') || 
+        errorMessage.toLowerCase().includes('connection')) {
+        return {
+            type: 'NETWORK_ERROR',
+            code: 'CONNECTION_FAILED',
+            message: 'Connection error',
+            details: 'Unable to connect to the server.',
+            suggestions: [
+                'Check your internet connection',
+                'Try again in a few moments',
+                'Contact support if the problem persists'
+            ],
+            originalError: errorCode
+        };
+    }
+    
+    // Default error response
+    return {
+        type: 'SERVER_ERROR',
+        code: 'INTERNAL_ERROR',
+        message: 'Server error occurred',
+        details: 'An unexpected error occurred on the server.',
+        suggestions: [
+            'Try again in a few moments',
+            'Refresh the page',
+            'Contact support if the problem persists'
+        ],
+        originalError: errorCode,
+        context: context
+    };
 }
 
 // Payment API (placeholder for Stripe integration)

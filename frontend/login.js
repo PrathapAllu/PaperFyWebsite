@@ -169,7 +169,7 @@ class LoginPage {
                 // Redirect immediately
                 window.location.href = 'dashboard.html';
             } else {
-                this.showError(result.message || 'Login failed');
+                this.showError(result.message || 'Login failed', result.error);
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -212,7 +212,7 @@ class LoginPage {
                     forgotLink.style.pointerEvents = 'auto';
                 }, 3000);
             } else {
-                this.showError(result.message || 'Failed to send reset email');
+                this.showError(result.message || 'Failed to send reset email', result.error);
                 forgotLink.textContent = originalText;
                 forgotLink.style.pointerEvents = 'auto';
             }
@@ -241,7 +241,7 @@ class LoginPage {
                 // We don't need to manually redirect here as signInWithOAuth handles it
             } else {
                 console.error(`❌ ${provider} login failed:`, result.message);
-                this.showError(result.message || `Failed to login with ${provider}`);
+                this.showError(result.message || `Failed to login with ${provider}`, result.error);
             }
         } catch (error) {
             console.error(`❌ ${provider} login error:`, error);
@@ -299,25 +299,94 @@ class LoginPage {
         }
     }
 
-    showError(message) {
+    showError(message, errorData = null) {
         this.clearErrors();
         const existingError = document.querySelector('.error-message');
         if (existingError) {
             existingError.remove();
         }
+        
+        // Handle enhanced error responses
+        let displayMessage = message;
+        let suggestions = [];
+        let fieldErrors = [];
+        
+        if (errorData && typeof errorData === 'object') {
+            displayMessage = errorData.message || message;
+            suggestions = errorData.suggestions || [];
+            fieldErrors = errorData.fields || [];
+            
+            // Show field-specific errors
+            if (fieldErrors.length > 0) {
+                fieldErrors.forEach(fieldError => {
+                    this.showFieldError(fieldError.field, fieldError.message);
+                });
+            }
+        }
+        
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error-message';
+        
+        let suggestionsHTML = '';
+        if (suggestions.length > 0) {
+            suggestionsHTML = `
+                <div class="error-suggestions">
+                    <p><strong>Try this:</strong></p>
+                    <ul>
+                        ${suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
         errorDiv.innerHTML = `
             <div class="message-box error">
                 <span class="message-icon" aria-hidden="true">⚠️</span>
-                <span class="message-text">${message}</span>
+                <div class="message-content">
+                    <span class="message-text">${displayMessage}</span>
+                    ${suggestionsHTML}
+                </div>
                 <button class="message-close" aria-label="Dismiss error" tabindex="0">×</button>
             </div>
         `;
+        
         errorDiv.querySelector('.message-close').addEventListener('click', () => {
             if (errorDiv.parentNode) errorDiv.remove();
         });
+        
         this.loginForm.insertBefore(errorDiv, this.loginForm.firstChild);
+    }
+    
+    showFieldError(fieldName, message) {
+        const field = document.querySelector(`input[name="${fieldName}"], #${fieldName}, .${fieldName}-input`);
+        if (field) {
+            field.classList.add('error');
+            
+            // Remove existing field error
+            const existingFieldError = field.parentNode.querySelector('.field-error');
+            if (existingFieldError) {
+                existingFieldError.remove();
+            }
+            
+            // Add new field error
+            const fieldErrorDiv = document.createElement('div');
+            fieldErrorDiv.className = 'field-error';
+            fieldErrorDiv.textContent = message;
+            field.parentNode.appendChild(fieldErrorDiv);
+            
+            // Remove error styling when user starts typing
+            const removeError = () => {
+                field.classList.remove('error');
+                if (fieldErrorDiv.parentNode) {
+                    fieldErrorDiv.remove();
+                }
+                field.removeEventListener('input', removeError);
+                field.removeEventListener('focus', removeError);
+            };
+            
+            field.addEventListener('input', removeError);
+            field.addEventListener('focus', removeError);
+        }
     }
 
     showSuccess(message) {

@@ -365,7 +365,7 @@ class SignupPage {
                 
             } else {
                 // Signup failed for other reasons
-                this.showMessage(result.message || 'Failed to create account. Please try again.', 'error');
+                this.showMessage(result.message || 'Failed to create account. Please try again.', 'error', result.error);
             }
             
         } catch (error) {
@@ -391,7 +391,7 @@ class SignupPage {
                 }, 1500);
                 
             } else {
-                this.showMessage(result.message || `Failed to sign up with ${provider}`, 'error');
+                this.showMessage(result.message || `Failed to sign up with ${provider}`, 'error', result.error);
             }
             
         } catch (error) {
@@ -421,8 +421,39 @@ class SignupPage {
         }
     }
 
-    showMessage(message, type = 'info') {
-        this.messageText.textContent = message;
+    showMessage(message, type = 'info', errorData = null) {
+        // Handle enhanced error responses
+        let displayMessage = message;
+        let suggestions = [];
+        let fieldErrors = [];
+        
+        if (type === 'error' && errorData && typeof errorData === 'object') {
+            displayMessage = errorData.message || message;
+            suggestions = errorData.suggestions || [];
+            fieldErrors = errorData.fields || [];
+            
+            // Show field-specific errors
+            if (fieldErrors.length > 0) {
+                fieldErrors.forEach(fieldError => {
+                    this.showFieldError(fieldError.field, fieldError.message);
+                });
+            }
+        }
+        
+        // Create suggestions HTML
+        let suggestionsHTML = '';
+        if (suggestions.length > 0) {
+            suggestionsHTML = `
+                <div class="error-suggestions">
+                    <p><strong>Try this:</strong></p>
+                    <ul>
+                        ${suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        this.messageText.innerHTML = displayMessage + suggestionsHTML;
         this.messageContainer.style.display = 'block';
         
         const messageContent = this.messageContainer.querySelector('.message-content');
@@ -441,6 +472,38 @@ class SignupPage {
                 break;
             default:
                 this.messageIcon.textContent = 'ℹ️';
+        }
+    }
+    
+    showFieldError(fieldName, message) {
+        const field = document.querySelector(`input[name="${fieldName}"], #${fieldName}, .${fieldName}-input`);
+        if (field) {
+            field.classList.add('error');
+            
+            // Remove existing field error
+            const existingFieldError = field.parentNode.querySelector('.field-error');
+            if (existingFieldError) {
+                existingFieldError.remove();
+            }
+            
+            // Add new field error
+            const fieldErrorDiv = document.createElement('div');
+            fieldErrorDiv.className = 'field-error';
+            fieldErrorDiv.textContent = message;
+            field.parentNode.appendChild(fieldErrorDiv);
+            
+            // Remove error styling when user starts typing
+            const removeError = () => {
+                field.classList.remove('error');
+                if (fieldErrorDiv.parentNode) {
+                    fieldErrorDiv.remove();
+                }
+                field.removeEventListener('input', removeError);
+                field.removeEventListener('focus', removeError);
+            };
+            
+            field.addEventListener('input', removeError);
+            field.addEventListener('focus', removeError);
         }
     }
 
