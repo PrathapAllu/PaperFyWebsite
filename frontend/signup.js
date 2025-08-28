@@ -36,7 +36,6 @@ class SignupPage {
         this.passwordStrength = document.getElementById('passwordStrength');
         
         this.googleBtn = document.querySelector('.google-btn');
-        this.githubBtn = document.querySelector('.github-btn');
         
         this.messageContainer = document.getElementById('messageContainer');
         this.messageIcon = document.getElementById('messageIcon');
@@ -54,7 +53,6 @@ class SignupPage {
         this.toggleConfirmPassword.addEventListener('click', () => this.togglePasswordVisibility('confirmPassword'));
         
         this.googleBtn.addEventListener('click', () => this.handleSocialSignup('google'));
-        this.githubBtn.addEventListener('click', () => this.handleSocialSignup('github'));
         
         this.messageClose.addEventListener('click', () => this.hideMessage());
         
@@ -100,7 +98,7 @@ class SignupPage {
             this.setValidation('firstName', 'Please enter a valid first name (2-25 characters, letters only)', 'error');
             return false;
         } else {
-            this.setValidation('firstName', 'Looks good!', 'success');
+            this.setValidation('firstName', '', 'none');
             return true;
         }
     }
@@ -116,7 +114,7 @@ class SignupPage {
             this.setValidation('lastName', 'Please enter a valid last name (2-25 characters, letters only)', 'error');
             return false;
         } else {
-            this.setValidation('lastName', 'Looks good!', 'success');
+            this.setValidation('lastName', '', 'none');
             return true;
         }
     }
@@ -262,11 +260,20 @@ class SignupPage {
         const eyeIcon = toggleBtn.querySelector('.eye-icon');
         
         if (input.type === 'password') {
+            // Show password - use crossed out eye
             input.type = 'text';
-            eyeIcon.textContent = '🙈';
+            eyeIcon.innerHTML = `
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+                <line x1="1" y1="1" x2="23" y2="23" stroke="white" stroke-width="2"/>
+            `;
         } else {
+            // Hide password - use normal eye
             input.type = 'password';
-            eyeIcon.textContent = '👁️';
+            eyeIcon.innerHTML = `
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+            `;
         }
     }
 
