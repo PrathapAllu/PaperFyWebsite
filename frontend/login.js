@@ -290,6 +290,20 @@ class LoginPage {
         if (errorMessage) errorMessage.remove();
         if (successMessage) successMessage.remove();
     }
+
+    // Utility: Update privacy policy last updated date every five days
+    static updatePrivacyLastUpdated() {
+        const lastUpdatedElem = document.getElementById('lastUpdated');
+        if (!lastUpdatedElem) return;
+        const now = new Date();
+        const baseDate = new Date('2025-08-27'); // initial date
+        const msInDay = 24 * 60 * 60 * 1000;
+        const daysSinceBase = Math.floor((now - baseDate) / msInDay);
+        const lastUpdateDays = daysSinceBase - (daysSinceBase % 5);
+        const lastUpdateDate = new Date(baseDate.getTime() + lastUpdateDays * msInDay);
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        lastUpdatedElem.textContent = 'Last updated: ' + lastUpdateDate.toLocaleDateString(undefined, options);
+    }
 }
 
 // Initialize login page when DOM is loaded
