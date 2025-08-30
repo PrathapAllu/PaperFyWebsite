@@ -72,19 +72,10 @@ class AuthService {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
             
-            
-            // Set the remember me flag in localStorage
-            if (persistSession) {
-                localStorage.setItem('stepdoc_remember_me', 'true');
-            } else {
-                localStorage.removeItem('stepdoc_remember_me');
-            }
-            
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password
             });
-            
             
             if (error) {
                 throw error;
@@ -94,6 +85,12 @@ class AuthService {
                 throw new Error('Login failed - no user or session returned');
             }
             
+            // Set the remember me flag ONLY after successful authentication
+            if (persistSession) {
+                localStorage.setItem('stepdoc_remember_me', 'true');
+            } else {
+                localStorage.removeItem('stepdoc_remember_me');
+            }
             
             return {
                 success: true,

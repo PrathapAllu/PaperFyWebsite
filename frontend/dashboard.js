@@ -87,9 +87,14 @@ class Dashboard {
     async checkSubscriptionAndProceed(user) {
         const emailJustVerified = sessionStorage.getItem('email_just_verified') === 'true';
         const emailVerifiedAndLoggedIn = sessionStorage.getItem('email_verified_and_logged_in') === 'true';
+        const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
         
-        if (!user.email_confirmed && !emailJustVerified && !emailVerifiedAndLoggedIn) {
-            localStorage.removeItem('stepdoc_remember_me');
+        // Skip email verification check if remember me is enabled and user has valid session
+        if (!user.email_confirmed && !emailJustVerified && !emailVerifiedAndLoggedIn && !rememberMeFlag) {
+            // Only remove remember me flag if user is not verified and doesn't have remember me
+            if (!rememberMeFlag) {
+                localStorage.removeItem('stepdoc_remember_me');
+            }
             this.redirectToLogin('?message=Please verify your email before accessing dashboard');
             return;
         }
@@ -107,21 +112,32 @@ class Dashboard {
             return;
         }
         
-        const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
         const urlParams = new URLSearchParams(window.location.search);
         const isNewSession = urlParams.get('new_session') === 'true';
         
-        if (!rememberMeFlag && !isNewSession) {
+        // Re-read rememberMeFlag to ensure we have the latest value
+        const currentRememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+        
+        // Allow access if either remember me is enabled OR it's a new session from login
+        if (!currentRememberMeFlag && !isNewSession) {
             await this.forceLogout();
             this.redirectToLogin();
             return;
         }
         
         if (isNewSession) {
+            // Set session as active BEFORE cleaning URL to prevent race conditions
+            sessionStorage.setItem('current_session', 'active');
+            // Also set a flag to indicate this is a fresh login session
+            sessionStorage.setItem('fresh_login_session', 'true');
             const url = new URL(window.location);
             url.searchParams.delete('new_session');
             window.history.replaceState({}, document.title, url.pathname);
-            sessionStorage.setItem('current_session', 'active');
+            
+            // Remove fresh login flag after 2 seconds to prevent permanent bypass
+            setTimeout(() => {
+                sessionStorage.removeItem('fresh_login_session');
+            }, 2000);
         }
     }
 
@@ -674,6 +690,12 @@ class Dashboard {
                 // Page became visible - check if session should persist
                 const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
                 const hasActiveSession = sessionStorage.getItem('current_session') === 'active';
+                const isFreshLogin = sessionStorage.getItem('fresh_login_session') === 'true';
+                
+                // Don't redirect if this is a fresh login session
+                if (isFreshLogin) {
+                    return;
+                }
                 
                 if (!rememberMeFlag && !hasActiveSession) {
                     // No remember me and no active session - redirect to login
@@ -691,14 +713,22 @@ class Dashboard {
             }
         });
         
-        // Handle page focus
+        // Handle page focus (add delay to prevent race conditions on page load)
         window.addEventListener('focus', () => {
-            const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
-            const hasActiveSession = sessionStorage.getItem('current_session') === 'active';
-            
-            if (!rememberMeFlag && !hasActiveSession) {
-                this.redirectToLogin();
-            }
+            setTimeout(() => {
+                const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+                const hasActiveSession = sessionStorage.getItem('current_session') === 'active';
+                const isFreshLogin = sessionStorage.getItem('fresh_login_session') === 'true';
+                
+                // Don't redirect if this is a fresh login session
+                if (isFreshLogin) {
+                    return;
+                }
+                
+                if (!rememberMeFlag && !hasActiveSession) {
+                    this.redirectToLogin();
+                }
+            }, 500); // Small delay to ensure initialization is complete
         });
     }
 

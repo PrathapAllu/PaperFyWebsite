@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     if (supabase) {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user && session.user.email_confirmed) {
+        const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+        if (session && session.user && (session.user.email_confirmed || rememberMeFlag)) {
             window.location.href = 'dashboard.html';
         }
     }
@@ -457,7 +458,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
         if (rememberMeFlag) {
             const userCheck = await authService.getCurrentUser();
-            if (userCheck.success && userCheck.data && userCheck.data.email_confirmed) {
+            if (userCheck.success && userCheck.data) {
+                // Allow access if remember me is enabled, regardless of email confirmation
                 window.location.href = 'dashboard.html';
                 return;
             } else {
