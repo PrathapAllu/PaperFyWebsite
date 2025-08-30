@@ -10,12 +10,13 @@ const hpp = require('hpp');
 const { body, validationResult, param, query } = require('express-validator');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 
-const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'JWT_SECRET'];
+const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'JWT_SECRET', 'STRIPE_SECRET_KEY'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
@@ -1278,6 +1279,111 @@ app.post('/api/subscription/status', authenticateUser, async (req, res) => {
       active: false, 
       message: 'Error checking subscription' 
     });
+  }
+});
+
+app.post('/api/create-payment-intent', authenticateUser, async (req, res) => {
+  try {
+    const { planType, billingDetails } = req.body;
+    
+    if (!planType || !['pro', 'pro_plus'].includes(planType)) {
+      return res.status(400).json({ error: 'Invalid plan type' });
+    }
+
+    const planPrices = {
+      'pro': 900,
+      'pro_plus': 1900
+    };
+
+    const amount = planPrices[planType];
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: 'usd',
+      metadata: {
+        userId: req.user.id,
+        planType: planType,
+        email: billingDetails.email
+      },
+      receipt_email: billingDetails.email
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: 'Payment setup failed' });
+  }
+});
+
+app.post('/api/create-subscription', authenticateUser, async (req, res) => {
+  try {
+    const { planType, expiresAt } = req.body;
+    const userId = req.user.id;
+
+    if (!planType || !['pro', 'pro_plus'].includes(planType)) {
+      return res.status(400).json({ error: 'Invalid plan type' });
+    }
+
+    if (!expiresAt) {
+      return res.status(400).json({ error: 'Expiry date is required' });
+    }
+
+    const { data: existingSubscription } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (existingSubscription) {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .update({ 
+          plan_type: planType,
+          expires_at: expiresAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return res.json({ 
+        success: true, 
+        subscription: data,
+        message: 'Subscription updated successfully' 
+      });
+    } else {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .insert([
+          {
+            user_id: userId,
+            plan_type: planType,
+            expires_at: expiresAt,
+            created_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return res.json({ 
+        success: true, 
+        subscription: data,
+        message: 'Subscription created successfully' 
+      });
+    }
+
+  } catch (error) {
+    res.status(500).json({ error: 'Subscription creation failed' });
   }
 });
 
