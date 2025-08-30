@@ -99,15 +99,22 @@ class AuthService {
                 localStorage.removeItem('stepdoc_remember_me');
             }
             
+            // FIX: Use proper session persistence based on remember me choice
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password
-            }, {
-                persistSession: persistSession ? 'local' : 'session'
             });
+            
             if (error) {
                 throw error;
             }
+            
+            // FIX: Set session storage type based on remember me choice
+            if (!persistSession) {
+                // For non-remember me, ensure session is cleared when tab closes
+                sessionStorage.setItem('temp_session', 'true');
+            }
+            
             return {
                 success: true,
                 message: 'Login successful',

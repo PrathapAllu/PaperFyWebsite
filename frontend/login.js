@@ -407,15 +407,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error('Supabase connection test failed');
         }
 
-        // Check if remember me is enabled AND user has a valid session
+        // FIX: Only redirect if BOTH remember me is enabled AND user has valid session
         const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
         if (rememberMeFlag) {
             const userCheck = await authService.getCurrentUser();
             if (userCheck.success && userCheck.data) {
+                // BOTH conditions met - safe to redirect
                 window.location.href = 'dashboard.html';
                 return;
             } else {
-                // Clear invalid remember me flag if session is invalid
+                // Session is invalid - clear the flag and stay on login
                 localStorage.removeItem('stepdoc_remember_me');
             }
         }

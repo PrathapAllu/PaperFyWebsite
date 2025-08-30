@@ -31,24 +31,27 @@ class Dashboard {
 
     async checkAuthStatus() {
         try {
-            // Check if remember me is enabled
-            const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
-            
-            if (!rememberMeFlag) {
-                // If remember me is not checked, redirect to login
-                this.redirectToLogin();
-                return;
-            }
-            
-            // Check if user has valid session
+            // FIX: Check Supabase session first to prevent infinite loops
             const { data: { user }, error } = await window.supabaseClient.auth.getUser();
+            
             if (error || !user) {
-                // Clear invalid remember me flag and redirect to login
+                // No valid session - clear any invalid flags and redirect to login
                 localStorage.removeItem('stepdoc_remember_me');
                 this.redirectToLogin();
                 return;
             }
             
+            // User has valid session - now check remember me logic
+            const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+            
+            if (!rememberMeFlag) {
+                // FIX: User has valid session but no remember me - clear session and redirect
+                await this.forceLogout();
+                this.redirectToLogin();
+                return;
+            }
+            
+            // Both conditions met - user is authenticated and remembered
             this.currentUser = user;
         } catch (error) {
             // Clear any invalid state and redirect to login
@@ -404,6 +407,47 @@ class Dashboard {
             localStorage.removeItem('stepdoc_remember_me');
             this.redirectToLogin();
         }
+    }
+
+    async forceLogout() {
+        try {
+            // Force clear Supabase session regardless of state
+            if (window.supabaseClient) {
+                await window.supabaseClient.auth.signOut();
+            }
+            // Clear all local storage flags and tokens
+            localStorage.removeItem('stepdoc_remember_me');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+        } catch (error) {
+            // Even if Supabase logout fails, clear local storage
+            localStorage.removeItem('stepdoc_remember_me');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+        }
+    }
+
+    setupVisibilityHandler() {
+        // FIX: Only check remember me flag, don't force logout on visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                // Page became visible - just check if we should still be here
+                const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+                if (!rememberMeFlag) {
+                    // Flag is false but we're on dashboard - redirect to login
+                    this.redirectToLogin();
+                }
+            }
+        });
+        
+        // Also handle page focus for additional security
+        window.addEventListener('focus', () => {
+            const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+            if (!rememberMeFlag) {
+                // Flag is false but we're on dashboard - redirect to login
+                this.redirectToLogin();
+            }
+        });
     }
 
     redirectToLogin() {
