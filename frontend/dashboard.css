@@ -359,7 +359,7 @@ body {
     top: 100%;
     left: 0;
     right: 0;
-    background: rgb(118, 134, 206);
+    background: rgb(227, 226, 235);
     border-radius: 15px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     margin-top: 0.5rem;
@@ -379,7 +379,7 @@ body {
 .mac-option {
     display: block;
     padding: 1rem 1.5rem;
-    color: #333;
+    color: #040216;
     text-decoration: none;
     transition: background-color 0.2s ease;
     border-bottom: 1px solid #f0f0f0;
@@ -390,7 +390,7 @@ body {
 }
 
 .mac-option:hover {
-    background: #f8f9fa;
+    background: #f7f7f7;
 }
 
 .contact-support-btn {
