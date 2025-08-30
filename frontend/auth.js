@@ -40,11 +40,15 @@ class AuthService {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
+            
+            const redirectUrl = window.config?.getDashboardUrl() || 'https://stepdoc-zeta.vercel.app/dashboard.html';
+            
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
-                    data: metadata
+                    data: metadata,
+                    emailRedirectTo: redirectUrl
                 }
             });
             if (error) {
@@ -193,7 +197,7 @@ class AuthService {
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/subscription.html`
+                    redirectTo: window.config?.getDashboardUrl() || 'https://stepdoc-zeta.vercel.app/dashboard.html'
                 }
             });
             if (error) {
@@ -219,7 +223,7 @@ class AuthService {
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'github',
                 options: {
-                    redirectTo: `${window.location.origin}/subscription.html`
+                    redirectTo: window.config?.getDashboardUrl() || 'https://stepdoc-zeta.vercel.app/dashboard.html'
                 }
             });
             if (error) {

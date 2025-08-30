@@ -9,7 +9,7 @@ class SubscriptionPage {
 
     async init() {
         try {
-            await this.checkAuthStatus();
+            await this.handleAuthFlow();
             await this.initializeStripe();
             this.initializeEventListeners();
         } catch (error) {
@@ -17,7 +17,39 @@ class SubscriptionPage {
         }
     }
 
-    async checkAuthStatus() {
+    async handleAuthFlow() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+
+        if (error) {
+            this.redirectToLogin(`?error=${encodeURIComponent(errorDescription || 'Authentication failed')}`);
+            return;
+        }
+
+        if (accessToken && refreshToken) {
+            try {
+                const { data, error: sessionError } = await window.supabaseClient.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                });
+
+                if (sessionError) {
+                    throw sessionError;
+                }
+
+                window.history.replaceState({}, document.title, window.location.pathname);
+                this.currentUser = data.user;
+                this.populateUserData();
+                return;
+            } catch (error) {
+                this.redirectToLogin('?error=Session setup failed');
+                return;
+            }
+        }
+
         try {
             const { data: { user }, error } = await window.supabaseClient.auth.getUser();
             
@@ -248,8 +280,6 @@ class SubscriptionPage {
             }
 
             await this.createSubscription();
-            
-            const planDetails = this.getPlanDetails(this.selectedPlan);
             localStorage.setItem('user_subscription', JSON.stringify({
                 planType: this.selectedPlan,
                 expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -420,8 +450,8 @@ class SubscriptionPage {
         return container;
     }
 
-    redirectToLogin() {
-        window.location.href = 'login.html';
+    redirectToLogin(params = '') {
+        window.location.href = `login.html${params}`;
     }
 }
 

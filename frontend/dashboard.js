@@ -11,7 +11,7 @@ class Dashboard {
             if (loadingOverlay) loadingOverlay.style.display = 'flex';
             if (mainContent) mainContent.style.display = 'none';
 
-            await this.checkAuthStatus();
+            await this.handleAuthFlow();
 
             if (loadingOverlay) loadingOverlay.style.display = 'none';
             if (mainContent) mainContent.style.display = 'block';
@@ -29,62 +29,89 @@ class Dashboard {
         }
     }
 
+    async handleAuthFlow() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+
+        if (error) {
+            this.redirectToLogin(`?error=${encodeURIComponent(errorDescription || 'Authentication failed')}`);
+            return;
+        }
+
+        if (accessToken && refreshToken) {
+            try {
+                const { data, error: sessionError } = await window.supabaseClient.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                });
+
+                if (sessionError) {
+                    throw sessionError;
+                }
+
+                window.history.replaceState({}, document.title, window.location.pathname);
+                this.currentUser = data.user;
+                await this.checkSubscriptionAndProceed(data.user);
+                return;
+            } catch (error) {
+                this.redirectToLogin('?error=Session setup failed');
+                return;
+            }
+        }
+
+        await this.checkAuthStatus();
+    }
+
     async checkAuthStatus() {
         try {
-            // Check Supabase session first
             const { data: { user }, error } = await window.supabaseClient.auth.getUser();
             
             if (error || !user) {
-                // No valid session - clear any invalid flags and redirect to login
                 localStorage.removeItem('stepdoc_remember_me');
                 this.redirectToLogin();
                 return;
             }
             
-            // Check email verification
-            if (!user.email_confirmed) {
-                localStorage.removeItem('stepdoc_remember_me');
-                this.redirectToLogin('?message=Please verify your email before accessing dashboard');
-                return;
-            }
-            
-            // Check subscription status for verified users
-            const hasSubscription = await this.checkSubscriptionStatus(user);
-            if (!hasSubscription) {
-                window.location.href = 'subscription.html';
-                return;
-            }
-            
-            // Check remember me logic
-            const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
-            const urlParams = new URLSearchParams(window.location.search);
-            const isNewSession = urlParams.get('new_session') === 'true';
-            
-            if (!rememberMeFlag && !isNewSession) {
-                // FIX: Only force logout for returning sessions without remember me
-                // Not for new sessions in current browser tab
-                await this.forceLogout();
-                this.redirectToLogin();
-                return;
-            }
-            
-            // Clear the URL parameter after first check
-            if (isNewSession) {
-                // Remove the parameter from URL without page reload
-                const url = new URL(window.location);
-                url.searchParams.delete('new_session');
-                window.history.replaceState({}, document.title, url.pathname);
-                
-                // Set sessionStorage for subsequent checks within this tab
-                sessionStorage.setItem('current_session', 'active');
-            }
-            
-            // User is authenticated
             this.currentUser = user;
+            await this.checkSubscriptionAndProceed(user);
+            
         } catch (error) {
-            // Clear any invalid state and redirect to login
             localStorage.removeItem('stepdoc_remember_me');
             this.redirectToLogin();
+        }
+    }
+
+    async checkSubscriptionAndProceed(user) {
+        if (!user.email_confirmed) {
+            localStorage.removeItem('stepdoc_remember_me');
+            this.redirectToLogin('?message=Please verify your email before accessing dashboard');
+            return;
+        }
+        
+        const hasSubscription = await this.checkSubscriptionStatus(user);
+        if (!hasSubscription) {
+            window.location.href = 'subscription.html';
+            return;
+        }
+        
+        const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+        const urlParams = new URLSearchParams(window.location.search);
+        const isNewSession = urlParams.get('new_session') === 'true';
+        
+        if (!rememberMeFlag && !isNewSession) {
+            await this.forceLogout();
+            this.redirectToLogin();
+            return;
+        }
+        
+        if (isNewSession) {
+            const url = new URL(window.location);
+            url.searchParams.delete('new_session');
+            window.history.replaceState({}, document.title, url.pathname);
+            sessionStorage.setItem('current_session', 'active');
         }
     }
 
