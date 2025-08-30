@@ -6,28 +6,20 @@ class Dashboard {
 
     async init() {
         try {
-            // Show loading overlay
             const loadingOverlay = document.getElementById('dashboardLoadingOverlay');
             const mainContent = document.getElementById('mainDashboardContent');
             if (loadingOverlay) loadingOverlay.style.display = 'flex';
             if (mainContent) mainContent.style.display = 'none';
 
-            // Check authentication status
             await this.checkAuthStatus();
 
-            // Hide loading overlay and show dashboard content
             if (loadingOverlay) loadingOverlay.style.display = 'none';
             if (mainContent) mainContent.style.display = 'block';
 
-            // Initialize UI components
             this.initializeEventListeners();
             this.loadUserData();
             this.loadDashboardData();
-
-            console.log('Dashboard initialized successfully');
         } catch (error) {
-            console.error('Failed to initialize dashboard:', error);
-            // Hide loading overlay and keep dashboard hidden before redirect
             const loadingOverlay = document.getElementById('dashboardLoadingOverlay');
             const mainContent = document.getElementById('mainDashboardContent');
             if (loadingOverlay) loadingOverlay.style.display = 'none';
@@ -38,41 +30,31 @@ class Dashboard {
 
     async checkAuthStatus() {
         try {
-            // Use Supabase Auth to check session
             const { data: { user }, error } = await window.supabaseClient.auth.getUser();
             if (error || !user) {
-                console.log('No authenticated user found');
                 this.redirectToLogin();
                 return;
             }
             this.currentUser = user;
-            console.log('Authenticated user:', user.email);
         } catch (error) {
-            console.error('Auth check failed:', error);
             this.redirectToLogin();
         }
     }
 
     initializeEventListeners() {
-        // User avatar click
         const userAvatar = document.querySelector('.user-avatar');
         const userDropdown = document.querySelector('.user-dropdown');
-        
         if (userAvatar && userDropdown) {
             userAvatar.addEventListener('click', (e) => {
                 e.stopPropagation();
                 userDropdown.classList.toggle('show');
             });
-
-            // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
                 if (!userDropdown.contains(e.target) && !userAvatar.contains(e.target)) {
                     userDropdown.classList.remove('show');
                 }
             });
         }
-
-        // Logout functionality
         const logoutBtn = document.querySelector('.logout-item');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => {
@@ -80,18 +62,52 @@ class Dashboard {
                 this.handleLogout();
             });
         }
-
-
-
-        // Quick action buttons
         const actionBtns = document.querySelectorAll('.action-btn');
         actionBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 this.handleQuickAction(btn);
             });
         });
-
-
+        const macDropdownBtn = document.getElementById('macDropdownBtn');
+        const macDropdownMenu = document.getElementById('macDropdownMenu');
+        if (macDropdownBtn && macDropdownMenu) {
+            macDropdownBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                macDropdownBtn.classList.toggle('active');
+                macDropdownMenu.classList.toggle('show');
+            });
+            document.addEventListener('click', (e) => {
+                if (!macDropdownBtn.contains(e.target) && !macDropdownMenu.contains(e.target)) {
+                    macDropdownBtn.classList.remove('active');
+                    macDropdownMenu.classList.remove('show');
+                }
+            });
+            const macOptions = document.querySelectorAll('.mac-option');
+            macOptions.forEach(option => {
+                option.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const selectedText = option.dataset.text;
+                    const link = option.dataset.link;
+                    const btnText = macDropdownBtn.querySelector('.btn-text');
+                    btnText.textContent = selectedText;
+                    macDropdownBtn.classList.remove('active');
+                    macDropdownMenu.classList.remove('show');
+                    if (link && link !== 'https://example.com/mac-silicon.dmg' && link !== 'https://example.com/mac-intel.dmg') {
+                        window.open(link, '_blank');
+                    }
+                });
+            });
+        }
+        const windowsBtn = document.querySelector('.windows-btn');
+        if (windowsBtn) {
+            windowsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const link = windowsBtn.dataset.link;
+                if (link && link !== 'https://example.com/windows.exe') {
+                    window.open(link, '_blank');
+                }
+            });
+        }
     }
 
 
@@ -100,7 +116,6 @@ class Dashboard {
     loadUserData() {
         if (!this.currentUser) return;
 
-        // Update user info in dropdown
         const userNameEl = document.querySelector('.user-name');
         const userEmailEl = document.querySelector('.user-email');
         const userInitialEl = document.querySelector('.user-initial');
@@ -123,28 +138,66 @@ class Dashboard {
     }
 
     async loadDashboardData() {
-        // Simulate loading dashboard data
         try {
             this.showLoading(true);
-            
-            // Simulate API calls
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Update stats (in a real app, this would come from your API)
             this.updateStats({
                 documents: Math.floor(Math.random() * 50) + 10,
                 collaborators: Math.floor(Math.random() * 20) + 5,
                 projects: Math.floor(Math.random() * 15) + 3,
                 storage: Math.floor(Math.random() * 80) + 20
             });
-
-            // Load recent activity
             this.loadRecentActivity();
-            
             this.showLoading(false);
         } catch (error) {
-            console.error('Failed to load dashboard data:', error);
             this.showLoading(false);
+        }
+    }
+
+    updateStats(stats) {
+        const statNumbers = document.querySelectorAll('.stat-number');
+        
+        if (statNumbers[0]) statNumbers[0].textContent = stats.documents;
+        if (statNumbers[1]) statNumbers[1].textContent = stats.collaborators;
+        if (statNumbers[2]) statNumbers[2].textContent = stats.projects;
+        if (statNumbers[3]) statNumbers[3].textContent = `${stats.storage}%`;
+    }
+
+    loadRecentActivity() {
+        const activities = [
+            {
+                icon: '📄',
+                title: 'Created new document "Project Proposal"',
+                time: '2 minutes ago'
+            },
+            {
+                icon: '👥',
+                title: 'Added collaborator to Marketing Team',
+                time: '1 hour ago'
+            },
+            {
+                icon: '✅',
+                title: 'Completed review for Q4 Report',
+                time: '3 hours ago'
+            },
+            {
+                icon: '💾',
+                title: 'Exported document to PDF',
+                time: '1 day ago'
+            }
+        ];
+
+        const activityList = document.querySelector('.activity-list');
+        if (activityList) {
+            activityList.innerHTML = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-icon">${activity.icon}</div>
+                    <div class="activity-content">
+                        <div class="activity-title">${activity.title}</div>
+                        <div class="activity-time">${activity.time}</div>
+                    </div>
+                </div>
+            `).join('');
         }
     }
 
@@ -199,7 +252,6 @@ class Dashboard {
 
     handleQuickAction(actionBtn) {
         const action = actionBtn.dataset.action;
-        
         switch (action) {
             case 'new-document':
                 this.createNewDocument();
@@ -213,55 +265,64 @@ class Dashboard {
             case 'view-analytics':
                 this.viewAnalytics();
                 break;
-            default:
-                console.log('Quick action not implemented:', action);
         }
     }
 
-
-
-    // Quick action methods (placeholder implementations)
     createNewDocument() {
-        console.log('Creating new document');
-        // Implementation for creating new document
-        alert('New document creation will be implemented soon!');
+    // ...existing code...
     }
 
     uploadFile() {
-        console.log('Uploading file');
-        // Implementation for file upload
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.pdf,.doc,.docx,.txt';
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                console.log('File selected:', file.name);
-                alert(`File "${file.name}" selected. Upload functionality will be implemented soon!`);
+                // ...existing code...
             }
         };
         input.click();
     }
 
     inviteTeamMember() {
-        console.log('Inviting team member');
-        // Implementation for team invitation
         const email = prompt('Enter email address to invite:');
         if (email && this.isValidEmail(email)) {
-            console.log('Inviting:', email);
-            alert(`Invitation will be sent to ${email} soon!`);
-        } else if (email) {
-            alert('Please enter a valid email address.');
+            // ...existing code...
         }
     }
 
     viewAnalytics() {
-        console.log('Viewing analytics');
-        // Implementation for analytics view
-        alert('Analytics view will be implemented soon!');
+    // ...existing code...
     }
 
-    // Utility methods
+
+
+    // Quick action methods (placeholder implementations)
+    createNewDocument() {
+    // ...existing code...
+    }
+
+    uploadFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.pdf,.doc,.docx,.txt';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                // ...existing code...
+            }
+        };
+        input.click();
+    }
+
+    inviteTeamMember() {
+        const email = prompt('Enter email address to invite:');
+        if (email && this.isValidEmail(email)) {
+            // ...existing code...
+        }
+    }
+
     isValidEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
@@ -281,18 +342,12 @@ class Dashboard {
     async handleLogout() {
         try {
             const { error } = await window.supabaseClient.auth.signOut();
-            // Clear Remember Me flag
             localStorage.removeItem('stepdoc_remember_me');
             if (error) {
-                console.error('Logout error:', error);
-                alert('Failed to logout. Please try again.');
                 return;
             }
-            console.log('User logged out successfully');
             this.redirectToLogin();
         } catch (error) {
-            console.error('Logout failed:', error);
-            alert('Failed to logout. Please try again.');
         }
     }
 
@@ -303,59 +358,29 @@ class Dashboard {
 
 // Initialize dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Initializing dashboard...');
-    
     try {
-        // Wait for services to be available with more detailed logging
         let attempts = 0;
         const maxAttempts = 50;
-        
-        console.log('⏳ Waiting for services to load...');
-        
         while (attempts < maxAttempts) {
-            // Check Supabase
             const supabaseAvailable = typeof window.supabase !== 'undefined' && 
                                     typeof window.supabase.createClient === 'function';
-            
-            // Check AuthService
-            const authServiceAvailable = typeof authService !== 'undefined' && 
-                                       typeof authService.waitForSupabase === 'function';
-            
-            console.log(`Attempt ${attempts + 1}: Supabase=${supabaseAvailable}, AuthService=${authServiceAvailable}`);
-            
-            if (supabaseAvailable && authServiceAvailable) {
-                console.log('✅ All services loaded successfully');
+            if (supabaseAvailable) {
                 break;
             }
-            
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
-        
         if (attempts >= maxAttempts) {
-            console.error('❌ Services not available after 5 seconds');
-            throw new Error('Services not available after waiting');
+            throw new Error('Supabase not available after waiting');
         }
-        
-        // Wait for Supabase to be properly initialized
-        console.log('⏳ Waiting for Supabase initialization...');
-        await authService.waitForSupabase();
-        
-        // Initialize dashboard
         new Dashboard();
-        console.log('✅ Dashboard initialized successfully');
-        
     } catch (error) {
-        console.error('❌ Failed to initialize dashboard:', error);
-        console.error('Error details:', error);
         window.location.href = 'login.html';
     }
 });
 
 // Handle browser back/forward buttons
 window.addEventListener('popstate', (event) => {
-    // Handle navigation state if needed
-    console.log('Navigation state changed');
 });
 
 
