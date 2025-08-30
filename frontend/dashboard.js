@@ -102,33 +102,84 @@ class Dashboard {
     }
 
     initializeMobileNavigation() {
-        // Add hamburger menu for mobile
-        const topNav = document.querySelector('.top-nav');
         const sideNav = document.querySelector('.side-nav');
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const mobileOverlay = document.querySelector('.mobile-overlay');
         
-        if (window.innerWidth <= 768) {
-            // Create mobile menu button if it doesn't exist
-            let mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-            if (!mobileMenuBtn) {
-                mobileMenuBtn = document.createElement('button');
-                mobileMenuBtn.className = 'mobile-menu-btn';
-                mobileMenuBtn.innerHTML = '☰';
-                mobileMenuBtn.style.cssText = `
-                    background: none;
-                    border: none;
-                    font-size: 1.5rem;
-                    cursor: pointer;
-                    padding: 8px;
-                    border-radius: 4px;
-                `;
-                
-                const navLeft = document.querySelector('.nav-left');
-                navLeft.appendChild(mobileMenuBtn);
-                
-                mobileMenuBtn.addEventListener('click', () => {
-                    sideNav.classList.toggle('mobile-open');
+        if (mobileMenuBtn && sideNav && mobileOverlay) {
+            // Remove any existing event listeners by cloning the button
+            const newMobileMenuBtn = mobileMenuBtn.cloneNode(true);
+            mobileMenuBtn.parentNode.replaceChild(newMobileMenuBtn, mobileMenuBtn);
+            
+            // Add click event to toggle menu
+            newMobileMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleMobileMenu();
+            });
+            
+            // Add click event to overlay to close menu
+            mobileOverlay.addEventListener('click', () => {
+                this.closeMobileMenu();
+            });
+            
+            // Close menu when clicking on nav items
+            const navItems = sideNav.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth <= 768) {
+                        this.closeMobileMenu();
+                    }
                 });
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && sideNav.classList.contains('mobile-open')) {
+                    this.closeMobileMenu();
+                }
+            });
+        }
+    }
+    
+    toggleMobileMenu() {
+        const sideNav = document.querySelector('.side-nav');
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const mobileOverlay = document.querySelector('.mobile-overlay');
+        
+        if (sideNav && mobileMenuBtn && mobileOverlay) {
+            const isOpen = sideNav.classList.contains('mobile-open');
+            
+            if (isOpen) {
+                this.closeMobileMenu();
+            } else {
+                this.openMobileMenu();
             }
+        }
+    }
+    
+    openMobileMenu() {
+        const sideNav = document.querySelector('.side-nav');
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const mobileOverlay = document.querySelector('.mobile-overlay');
+        
+        if (sideNav && mobileMenuBtn && mobileOverlay) {
+            sideNav.classList.add('mobile-open');
+            mobileMenuBtn.classList.add('active');
+            mobileOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    
+    closeMobileMenu() {
+        const sideNav = document.querySelector('.side-nav');
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const mobileOverlay = document.querySelector('.mobile-overlay');
+        
+        if (sideNav && mobileMenuBtn && mobileOverlay) {
+            sideNav.classList.remove('mobile-open');
+            mobileMenuBtn.classList.remove('active');
+            mobileOverlay.classList.remove('active');
+            document.body.style.overflow = '';
         }
     }
 

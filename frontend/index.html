@@ -10870,6 +10870,115 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       yearlyBtn.addEventListener('click', () => updatePricing(true));
     });
   </script>
+  <style>
+    /* Mobile Menu Styles */
+    #mobile-nav-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem;
+      opacity: 0;
+      transform: translateY(-100%);
+      transition: all 0.3s ease-in-out;
+    }
+
+    #mobile-nav-menu.show {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #mobile-nav-menu .mobile-nav-item {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 500;
+      background: none;
+      border: none;
+      padding: 1rem 2rem;
+      width: auto;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      text-decoration: none;
+      display: block;
+    }
+
+    #mobile-nav-menu .mobile-nav-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.05);
+    }
+
+    #mobile-nav-menu .mobile-close {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    #mobile-nav-menu .mobile-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: rotate(90deg);
+    }
+
+    /* Burger menu button animation */
+    .burger-menu-btn {
+      transition: all 0.3s ease;
+    }
+
+    .burger-menu-btn.active {
+      transform: rotate(90deg);
+    }
+
+    /* Additional responsive improvements */
+    @media (max-width: 480px) {
+      #mobile-nav-menu .mobile-nav-item {
+        font-size: 1.3rem;
+        padding: 0.8rem 1.5rem;
+      }
+      
+      #mobile-nav-menu .mobile-close {
+        top: 1.5rem;
+        right: 1.5rem;
+        font-size: 1.8rem;
+      }
+      
+      #mobile-nav-menu {
+        gap: 1.5rem;
+        padding: 1.5rem;
+      }
+    }
+    
+    @media (max-width: 375px) {
+      #mobile-nav-menu .mobile-nav-item {
+        font-size: 1.2rem;
+        padding: 0.7rem 1.2rem;
+      }
+      
+      #mobile-nav-menu {
+        gap: 1.2rem;
+        padding: 1.2rem;
+      }
+    }
+  </style>
+
   <script>
     // Burger menu mobile logic
     document.addEventListener('DOMContentLoaded', function() {
@@ -10877,52 +10986,99 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
       if (!burgerBtn) return;
       if (document.getElementById('mobile-nav-menu')) return; // Prevent duplicate menu
 
+      // Add burger menu class for animation
+      burgerBtn.classList.add('burger-menu-btn');
+
       const navMenu = document.createElement('div');
       navMenu.id = 'mobile-nav-menu';
-      navMenu.style.position = 'fixed';
-      navMenu.style.top = '64px';
-      navMenu.style.left = '0';
-      navMenu.style.width = '100%';
-      navMenu.style.background = '#222';
-      navMenu.style.zIndex = '9999';
-      navMenu.style.display = 'none';
-      navMenu.style.flexDirection = 'column';
-      navMenu.style.gap = '1rem';
-      navMenu.style.padding = '1.5rem 0';
       navMenu.innerHTML = `
-        <button class="nav-link" style="color:white;font-size:1.2rem;background:none;border:none;padding:1rem;width:100%;text-align:left;" data-section="features">Features</button>
-        <button class="nav-link" style="color:white;font-size:1.2rem;background:none;border:none;padding:1rem;width:100%;text-align:left;" data-section="how-it-works">How It Works</button>
-        <button class="nav-link" style="color:white;font-size:1.2rem;background:none;border:none;padding:1rem;width:100%;text-align:left;" data-section="use-cases">Use Cases</button>
-        <button class="nav-link" style="color:white;font-size:1.2rem;background:none;border:none;padding:1rem;width:100%;text-align:left;" data-section="pricing">Pricing</button>
-        <a href="login.html" style="color:white;font-size:1.2rem;padding:1rem;display:block;text-align:left;">Log In</a>
-        <a href="signup.html" style="color:white;font-size:1.2rem;padding:1rem;display:block;text-align:left;">Get StepDoc for free</a>
+        <button class="mobile-close" aria-label="Close menu">&times;</button>
+        <button class="mobile-nav-item nav-link" data-section="features">Features</button>
+        <button class="mobile-nav-item nav-link" data-section="how-it-works">How It Works</button>
+        <button class="mobile-nav-item nav-link" data-section="use-cases">Use Cases</button>
+        <button class="mobile-nav-item nav-link" data-section="pricing">Pricing</button>
+        <a href="login.html" class="mobile-nav-item">Log In</a>
+        <a href="signup.html" class="mobile-nav-item">Get StepDoc for free</a>
       `;
       document.body.appendChild(navMenu);
 
+      const closeBtn = navMenu.querySelector('.mobile-close');
+
+      function toggleMenu() {
+        const isOpen = navMenu.classList.contains('show');
+        if (isOpen) {
+          navMenu.classList.remove('show');
+          burgerBtn.classList.remove('active');
+          document.body.style.overflow = '';
+        } else {
+          navMenu.classList.add('show');
+          burgerBtn.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+      }
+
+      function closeMenu() {
+        navMenu.classList.remove('show');
+        burgerBtn.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        // Ensure smooth scrolling is enabled after menu closes
+        setTimeout(() => {
+          document.documentElement.style.scrollBehavior = 'smooth';
+        }, 50);
+      }
+
       burgerBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        navMenu.style.display = navMenu.style.display === 'none' ? 'flex' : 'none';
+        toggleMenu();
       });
 
-      document.addEventListener('click', function(e) {
-        if (!navMenu.contains(e.target) && e.target !== burgerBtn) {
-          navMenu.style.display = 'none';
+      closeBtn.addEventListener('click', closeMenu);
+
+      // Close menu when clicking outside
+      navMenu.addEventListener('click', function(e) {
+        if (e.target === navMenu) {
+          closeMenu();
+        }
+      });
+
+      // Close menu on escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && navMenu.classList.contains('show')) {
+          closeMenu();
         }
       });
 
       navMenu.querySelectorAll('button.nav-link').forEach(function(btn) {
         btn.addEventListener('click', function() {
-          navMenu.style.display = 'none';
+          closeMenu();
           const section = btn.getAttribute('data-section');
-          const sectionMap = {
-            'features': 'hero-buttons',
-            'how-it-works': 'hero-video-container',
-            'use-cases': 'hero-description',
-            'pricing': 'problem-card-0'
-          };
-          const el = document.getElementsByClassName(sectionMap[section])[0] || document.getElementById(sectionMap[section]);
+          
+          // Use the actual section IDs that exist in the HTML
+          const sectionId = section; // The data-section attribute matches the actual IDs
+          const el = document.getElementById(sectionId);
+          
           if (el) {
-            el.scrollIntoView({behavior: 'smooth'});
+            // Add a small delay to ensure menu is closed before scrolling
+            setTimeout(() => {
+              el.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+              });
+            }, 100);
+          } else {
+            console.log('Section not found:', sectionId);
+            // Fallback: try to find by class name as backup
+            const fallbackEl = document.querySelector('.' + sectionId) || 
+                              document.querySelector('[class*="' + sectionId + '"]');
+            if (fallbackEl) {
+              setTimeout(() => {
+                fallbackEl.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'start'
+                });
+              }, 100);
+            }
           }
         });
       });
