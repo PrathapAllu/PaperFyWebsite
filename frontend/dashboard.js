@@ -19,7 +19,7 @@ class Dashboard {
             this.initializeEventListeners();
             this.loadUserData();
             this.loadDashboardData();
-            this.setupVisibilityHandler(); // Fix issue #3: Setup visibility handler
+            this.setupVisibilityHandler();
         } catch (error) {
             const loadingOverlay = document.getElementById('dashboardLoadingOverlay');
             const mainContent = document.getElementById('mainDashboardContent');
@@ -31,7 +31,7 @@ class Dashboard {
 
     async checkAuthStatus() {
         try {
-            // FIX: Check Supabase session first to prevent infinite loops
+            // Check Supabase session first
             const { data: { user }, error } = await window.supabaseClient.auth.getUser();
             
             if (error || !user) {
@@ -41,17 +41,31 @@ class Dashboard {
                 return;
             }
             
-            // User has valid session - now check remember me logic
+            // Check remember me logic
             const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+            const urlParams = new URLSearchParams(window.location.search);
+            const isNewSession = urlParams.get('new_session') === 'true';
             
-            if (!rememberMeFlag) {
-                // FIX: User has valid session but no remember me - clear session and redirect
+            if (!rememberMeFlag && !isNewSession) {
+                // FIX: Only force logout for returning sessions without remember me
+                // Not for new sessions in current browser tab
                 await this.forceLogout();
                 this.redirectToLogin();
                 return;
             }
             
-            // Both conditions met - user is authenticated and remembered
+            // Clear the URL parameter after first check
+            if (isNewSession) {
+                // Remove the parameter from URL without page reload
+                const url = new URL(window.location);
+                url.searchParams.delete('new_session');
+                window.history.replaceState({}, document.title, url.pathname);
+                
+                // Set sessionStorage for subsequent checks within this tab
+                sessionStorage.setItem('current_session', 'active');
+            }
+            
+            // User is authenticated
             this.currentUser = user;
         } catch (error) {
             // Clear any invalid state and redirect to login
@@ -155,8 +169,7 @@ class Dashboard {
                     e.preventDefault();
                     const formData = new FormData(contactForm);
                     const data = Object.fromEntries(formData);
-                    console.log('Contact form submitted:', data);
-                    alert('Thank you for your message! We will get back to you soon.');
+                    // ...existing code...
                     contactModal.classList.remove('show');
                     contactForm.reset();
                 });
@@ -428,23 +441,35 @@ class Dashboard {
     }
 
     setupVisibilityHandler() {
-        // FIX: Only check remember me flag, don't force logout on visibility change
+        // Handle page visibility changes
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                // Page became visible - just check if we should still be here
+                // Page became visible - check if session should persist
                 const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
-                if (!rememberMeFlag) {
-                    // Flag is false but we're on dashboard - redirect to login
+                const hasActiveSession = sessionStorage.getItem('current_session') === 'active';
+                
+                if (!rememberMeFlag && !hasActiveSession) {
+                    // No remember me and no active session - redirect to login
                     this.redirectToLogin();
                 }
             }
         });
         
-        // Also handle page focus for additional security
-        window.addEventListener('focus', () => {
+        // Handle window beforeunload for non-remember-me sessions
+        window.addEventListener('beforeunload', () => {
             const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
             if (!rememberMeFlag) {
-                // Flag is false but we're on dashboard - redirect to login
+                // Clear session for non-remember-me users when tab closes
+                sessionStorage.removeItem('current_session');
+            }
+        });
+        
+        // Handle page focus
+        window.addEventListener('focus', () => {
+            const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+            const hasActiveSession = sessionStorage.getItem('current_session') === 'active';
+            
+            if (!rememberMeFlag && !hasActiveSession) {
                 this.redirectToLogin();
             }
         });

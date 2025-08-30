@@ -92,6 +92,7 @@ class AuthService {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
             
+            
             // Set the remember me flag in localStorage
             if (persistSession) {
                 localStorage.setItem('stepdoc_remember_me', 'true');
@@ -99,21 +100,20 @@ class AuthService {
                 localStorage.removeItem('stepdoc_remember_me');
             }
             
-            // FIX: Use proper session persistence based on remember me choice
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password
             });
             
+            
             if (error) {
                 throw error;
             }
             
-            // FIX: Set session storage type based on remember me choice
-            if (!persistSession) {
-                // For non-remember me, ensure session is cleared when tab closes
-                sessionStorage.setItem('temp_session', 'true');
+            if (!data.user || !data.session) {
+                throw new Error('Login failed - no user or session returned');
             }
+            
             
             return {
                 success: true,
@@ -269,7 +269,6 @@ class AuthService {
             
             const redirectUrl = window.config?.getResetPasswordUrl() || 'https://stepdoc-zeta.vercel.app/reset-password.html';
             
-            console.log('Sending password reset email with redirect URL:', redirectUrl);
             
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: redirectUrl

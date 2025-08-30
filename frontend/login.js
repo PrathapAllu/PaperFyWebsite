@@ -146,7 +146,8 @@ class LoginPage {
             const result = await authService.signIn(email, password, rememberMe);
             if (result.success) {
                 this.sendToExtension(result.data);
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.html?new_session=true';
+                window.location.href = 'dashboard.html?new_session=true';
             } else {
                 this.showError(result.message || 'Login failed', result.error);
             }
@@ -407,22 +408,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error('Supabase connection test failed');
         }
 
-        // FIX: Only redirect if BOTH remember me is enabled AND user has valid session
         const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
         if (rememberMeFlag) {
             const userCheck = await authService.getCurrentUser();
             if (userCheck.success && userCheck.data) {
-                // BOTH conditions met - safe to redirect
                 window.location.href = 'dashboard.html';
                 return;
             } else {
-                // Session is invalid - clear the flag and stay on login
                 localStorage.removeItem('stepdoc_remember_me');
             }
         }
-
         new LoginPage();
     } catch (error) {
-        alert('Authentication service not available. Please refresh the page.');
     }
 });
