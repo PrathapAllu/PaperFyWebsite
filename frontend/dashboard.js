@@ -85,7 +85,8 @@ class Dashboard {
     }
 
     async checkSubscriptionAndProceed(user) {
-        const emailJustVerified = sessionStorage.getItem('email_just_verified') === 'true';        const emailVerifiedAndLoggedIn = sessionStorage.getItem('email_verified_and_logged_in') === 'true';
+        const emailJustVerified = sessionStorage.getItem('email_just_verified') === 'true';
+        const emailVerifiedAndLoggedIn = sessionStorage.getItem('email_verified_and_logged_in') === 'true';
         
         if (!user.email_confirmed && !emailJustVerified && !emailVerifiedAndLoggedIn) {
             localStorage.removeItem('stepdoc_remember_me');
