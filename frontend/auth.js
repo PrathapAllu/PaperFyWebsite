@@ -33,31 +33,7 @@ class AuthService {
     }
 
     async checkUserExists(email) {
-        try {
-            await this.waitForSupabase();
-            const supabase = this.getSupabaseClient();
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: 'dummy_check_password_12345_invalid'
-            });
-            if (error) {
-                const errorMessage = error.message.toLowerCase();
-                if (errorMessage.includes('invalid login credentials') || 
-                    errorMessage.includes('email not confirmed') ||
-                    errorMessage.includes('invalid email or password')) {
-                    return { exists: true };
-                } else if (errorMessage.includes('user not found') ||
-                          errorMessage.includes('email not found') ||
-                          errorMessage.includes('no user found')) {
-                    return { exists: false };
-                } else {
-                    return { exists: true };
-                }
-            }
-            return { exists: true };
-        } catch (error) {
-            return { exists: false };
-        }
+        return { exists: false };
     }
 
     async signUp(email, password, metadata = {}) {

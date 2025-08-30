@@ -126,13 +126,20 @@ class SignupPage {
         if (!email) {
             this.setValidation('email', '', 'none');
             return false;
-        } else if (!emailRegex.test(email)) {
+        }
+        
+        if (!emailRegex.test(email)) {
             this.setValidation('email', 'Please enter a valid email address', 'error');
             return false;
-        } else {
-            this.setValidation('email', 'Email format is valid', 'success');
-            return true;
         }
+        
+        if (email.length > 254) {
+            this.setValidation('email', 'Email address is too long', 'error');
+            return false;
+        }
+        
+        this.setValidation('email', 'Email format is valid', 'success');
+        return true;
     }
 
     validatePhone() {
@@ -164,8 +171,12 @@ class SignupPage {
             return false;
         }
         
+        if (password.length < 8) {
+            this.setValidation('password', 'Password must be at least 8 characters long', 'error');
+            return false;
+        }
+        
         const issues = [];
-        if (!minLength) issues.push('at least 8 characters');
         if (!hasUpper) issues.push('one uppercase letter');
         if (!hasLower) issues.push('one lowercase letter');
         if (!hasNumber) issues.push('one number');
@@ -315,40 +326,28 @@ class SignupPage {
         try {
             this.setLoadingState(true);
             
-
-            const userExistsCheck = await authService.checkUserExists(userData.email);
-            
-            if (userExistsCheck.exists) {
-
-                this.setLoadingState(false);
-                this.showMessage('Account already exists. Redirecting to login...', 'info');
-                
-
-                setTimeout(() => {
-                    window.location.href = `login.html?message=Account already exists. Please sign in.&email=${encodeURIComponent(userData.email)}`;
-                }, 1500);
-                return;
-            }
-            
-
             const result = await authService.signUp(userData.email, userData.password, userData.options.data);
             
-
             if (result.success) {
                 this.showMessage('Account created successfully! Please check your email to verify your account.', 'success');
-                
-
                 this.signupForm.reset();
                 this.passwordStrength.classList.remove('show');
                 this.clearAllValidations();
-                
-
                 setTimeout(() => {
                     window.location.href = 'login.html?message=Please check your email to verify your account before signing in.';
                 }, 3000);
-                
             } else {
-                this.showMessage(result.message || 'Failed to create account. Please try again.', 'error', result.error);
+                const errorMsg = result.message || 'Failed to create account. Please try again.';
+                if (errorMsg.toLowerCase().includes('user already registered') || 
+                    errorMsg.toLowerCase().includes('already been registered') ||
+                    errorMsg.toLowerCase().includes('email already registered')) {
+                    this.showMessage('Account already exists. Redirecting to login...', 'info');
+                    setTimeout(() => {
+                        window.location.href = `login.html?message=Account already exists. Please sign in.&email=${encodeURIComponent(userData.email)}`;
+                    }, 1500);
+                } else {
+                    this.showMessage(errorMsg, 'error', result.error);
+                }
             }
             
         } catch (error) {
