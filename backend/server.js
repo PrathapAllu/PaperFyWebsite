@@ -1249,24 +1249,27 @@ app.post('/api/payment/create-checkout', (req, res) => {
 
 app.post('/api/subscription/status', authenticateUser, async (req, res) => {
   try {
-    const userId = req.user.id; // Get user ID from authenticated user
+    const userId = req.user.id;
     
     const { data, error } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_active', true)
       .single();
     
     if (error || !data) {
       return res.json({ 
         active: false,
-        message: 'No active subscription found' 
+        message: 'No subscription found' 
       });
     }
     
+    const currentDate = new Date();
+    const expiryDate = new Date(data.expires_at);
+    const isActive = expiryDate > currentDate;
+    
     return res.json({ 
-      active: true, 
+      active: isActive, 
       subscription: data 
     });
     

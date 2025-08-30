@@ -215,10 +215,160 @@ class Dashboard {
                 storage: Math.floor(Math.random() * 80) + 20
             });
             this.loadRecentActivity();
+            await this.loadSubscriptionData();
             this.showLoading(false);
         } catch (error) {
             this.showLoading(false);
         }
+    }
+
+    async fetchSubscriptionData() {
+        try {
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (!session?.access_token) {
+                throw new Error('No valid session');
+            }
+
+            const response = await fetch('/api/subscription/status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch subscription');
+            }
+
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            return { active: false, subscription: null };
+        }
+    }
+
+    async loadSubscriptionData() {
+        try {
+            const subscriptionData = await this.fetchSubscriptionData();
+            this.updateLicenseCard(subscriptionData);
+            this.updateDownloadAccess(subscriptionData);
+        } catch (error) {
+            this.updateLicenseCard({ active: false, subscription: null });
+            this.updateDownloadAccess({ active: false, subscription: null });
+        }
+    }
+
+    updateLicenseCard(subscriptionData) {
+        const planElement = document.querySelector('.license-row .license-value');
+        const statusElement = document.querySelector('.status-badge');
+        const validUntilElement = document.querySelectorAll('.license-row .license-value')[2];
+        const daysRemainingElement = document.querySelectorAll('.license-row .license-value')[3];
+
+        if (subscriptionData.subscription) {
+            const subscription = subscriptionData.subscription;
+            const planName = this.getPlanDisplayName(subscription.plan_type);
+            const expiryDate = new Date(subscription.expires_at);
+            const daysRemaining = this.calculateDaysRemaining(expiryDate);
+            const isActive = subscriptionData.active;
+
+            if (planElement) planElement.textContent = planName;
+            if (statusElement) {
+                if (isActive) {
+                    statusElement.textContent = 'Active';
+                    statusElement.className = 'status-badge status-active';
+                } else {
+                    statusElement.textContent = 'Expired';
+                    statusElement.className = 'status-badge status-inactive';
+                }
+            }
+            if (validUntilElement) validUntilElement.textContent = this.formatDate(expiryDate);
+            if (daysRemainingElement) {
+                if (isActive) {
+                    daysRemainingElement.textContent = `${daysRemaining} days`;
+                } else {
+                    daysRemainingElement.textContent = 'Expired';
+                }
+            }
+        } else {
+            if (planElement) planElement.textContent = 'Free';
+            if (statusElement) {
+                statusElement.textContent = 'Active';
+                statusElement.className = 'status-badge status-active';
+            }
+            if (validUntilElement) validUntilElement.textContent = 'N/A';
+            if (daysRemainingElement) daysRemainingElement.textContent = 'N/A';
+        }
+    }
+
+    getPlanDisplayName(planType) {
+        switch (planType) {
+            case 'pro':
+                return 'Pro';
+            case 'pro_plus':
+                return 'Pro Plus';
+            default:
+                return 'Free';
+        }
+    }
+
+    calculateDaysRemaining(expiryDate) {
+        const now = new Date();
+        const timeDiff = expiryDate.getTime() - now.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        return Math.max(0, daysDiff);
+    }
+
+    formatDate(date) {
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+
+    updateDownloadAccess(subscriptionData) {
+        const windowsBtn = document.querySelector('.windows-btn');
+        const macDropdownBtn = document.getElementById('macDropdownBtn');
+        const macOptions = document.querySelectorAll('.mac-option');
+
+        const hasProPlus = subscriptionData.subscription && 
+                          subscriptionData.active && 
+                          subscriptionData.subscription.plan_type === 'pro_plus';
+
+        if (windowsBtn) {
+            if (hasProPlus) {
+                windowsBtn.style.opacity = '1';
+                windowsBtn.style.pointerEvents = 'auto';
+                windowsBtn.removeAttribute('disabled');
+            } else {
+                windowsBtn.style.opacity = '0.5';
+                windowsBtn.style.pointerEvents = 'none';
+                windowsBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        if (macDropdownBtn) {
+            if (hasProPlus) {
+                macDropdownBtn.style.opacity = '1';
+                macDropdownBtn.style.pointerEvents = 'auto';
+                macDropdownBtn.removeAttribute('disabled');
+            } else {
+                macDropdownBtn.style.opacity = '0.5';
+                macDropdownBtn.style.pointerEvents = 'none';
+                macDropdownBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        macOptions.forEach(option => {
+            if (hasProPlus) {
+                option.style.opacity = '1';
+                option.style.pointerEvents = 'auto';
+            } else {
+                option.style.opacity = '0.5';
+                option.style.pointerEvents = 'none';
+            }
+        });
     }
 
     updateStats(stats) {

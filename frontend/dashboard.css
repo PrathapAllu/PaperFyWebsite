@@ -266,6 +266,11 @@ body {
     color: #2d5a2d;
 }
 
+.status-inactive {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
 .download-header {
     display: flex;
     align-items: center;
