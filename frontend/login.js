@@ -117,20 +117,17 @@ class LoginPage {
                     throw sessionError;
                 }
 
-                if (data.user && data.user.email_confirmed) {
-                    this.showSuccess('Email verified successfully! You can now sign in.');
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                    if (this.loginEmail) {
-                        this.loginEmail.value = data.user.email;
-                        if (this.loginPassword) {
-                            this.loginPassword.focus();
-                        }
+                this.showSuccess('Email verified successfully! You can now sign in.');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                if (this.loginEmail) {
+                    this.loginEmail.value = data.user.email;
+                    if (this.loginPassword) {
+                        this.loginPassword.focus();
                     }
-                } else {
-                    this.showError('Email verification incomplete. Please try again.');
-                    window.history.replaceState({}, document.title, window.location.pathname);
                 }
+                
+                sessionStorage.setItem('email_just_verified', 'true');
             } catch (error) {
                 this.showError('Email verification failed. Please try again.');
                 window.history.replaceState({}, document.title, window.location.pathname);
