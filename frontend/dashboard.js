@@ -48,6 +48,13 @@ class Dashboard {
                 return;
             }
             
+            // Check subscription status for verified users
+            const hasSubscription = await this.checkSubscriptionStatus(user);
+            if (!hasSubscription) {
+                window.location.href = 'subscription.html';
+                return;
+            }
+            
             // Check remember me logic
             const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
             const urlParams = new URLSearchParams(window.location.search);
@@ -78,6 +85,32 @@ class Dashboard {
             // Clear any invalid state and redirect to login
             localStorage.removeItem('stepdoc_remember_me');
             this.redirectToLogin();
+        }
+    }
+
+    async checkSubscriptionStatus(user) {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const skipSubscription = urlParams.get('skip_subscription') === 'true';
+            
+            if (skipSubscription) {
+                return true;
+            }
+            
+            const subscriptionData = localStorage.getItem('user_subscription');
+            if (subscriptionData) {
+                const subscription = JSON.parse(subscriptionData);
+                const now = new Date();
+                const expiryDate = new Date(subscription.expiresAt);
+                
+                if (subscription.planType === 'free' || now < expiryDate) {
+                    return true;
+                }
+            }
+            
+            return false;
+        } catch (error) {
+            return false;
         }
     }
 

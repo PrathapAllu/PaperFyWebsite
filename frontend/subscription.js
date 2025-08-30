@@ -137,9 +137,14 @@ class SubscriptionPage {
         try {
             this.showLoading(true);
             
+            localStorage.setItem('user_subscription', JSON.stringify({
+                planType: 'free',
+                expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+            }));
+            
             setTimeout(() => {
                 this.showLoading(false);
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.html?skip_subscription=true';
             }, 1000);
             
         } catch (error) {
@@ -244,10 +249,16 @@ class SubscriptionPage {
 
             await this.createSubscription();
             
+            const planDetails = this.getPlanDetails(this.selectedPlan);
+            localStorage.setItem('user_subscription', JSON.stringify({
+                planType: this.selectedPlan,
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            }));
+            
             this.showSuccess();
             
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.html?skip_subscription=true';
             }, 2000);
 
         } catch (error) {

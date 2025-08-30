@@ -193,7 +193,7 @@ class AuthService {
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/dashboard.html`
+                    redirectTo: `${window.location.origin}/subscription.html`
                 }
             });
             if (error) {
@@ -219,7 +219,7 @@ class AuthService {
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'github',
                 options: {
-                    redirectTo: `${window.location.origin}/dashboard.html`
+                    redirectTo: `${window.location.origin}/subscription.html`
                 }
             });
             if (error) {

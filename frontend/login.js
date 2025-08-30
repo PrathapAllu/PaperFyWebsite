@@ -147,7 +147,6 @@ class LoginPage {
             if (result.success) {
                 this.sendToExtension(result.data);
                 window.location.href = 'dashboard.html?new_session=true';
-                window.location.href = 'dashboard.html?new_session=true';
             } else {
                 this.showError(result.message || 'Login failed', result.error);
             }
