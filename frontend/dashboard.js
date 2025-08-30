@@ -41,6 +41,13 @@ class Dashboard {
                 return;
             }
             
+            // Check email verification
+            if (!user.email_confirmed) {
+                localStorage.removeItem('stepdoc_remember_me');
+                this.redirectToLogin('?message=Please verify your email before accessing dashboard');
+                return;
+            }
+            
             // Check remember me logic
             const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
             const urlParams = new URLSearchParams(window.location.search);
@@ -625,8 +632,8 @@ class Dashboard {
         });
     }
 
-    redirectToLogin() {
-        window.location.href = 'login.html';
+    redirectToLogin(params = '') {
+        window.location.href = 'login.html' + params;
     }
 }
 
