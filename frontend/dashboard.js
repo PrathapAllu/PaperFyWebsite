@@ -85,9 +85,9 @@ class Dashboard {
     }
 
     async checkSubscriptionAndProceed(user) {
-        const emailJustVerified = sessionStorage.getItem('email_just_verified') === 'true';
+        const emailJustVerified = sessionStorage.getItem('email_just_verified') === 'true';        const emailVerifiedAndLoggedIn = sessionStorage.getItem('email_verified_and_logged_in') === 'true';
         
-        if (!user.email_confirmed && !emailJustVerified) {
+        if (!user.email_confirmed && !emailJustVerified && !emailVerifiedAndLoggedIn) {
             localStorage.removeItem('stepdoc_remember_me');
             this.redirectToLogin('?message=Please verify your email before accessing dashboard');
             return;
@@ -95,6 +95,9 @@ class Dashboard {
         
         if (emailJustVerified) {
             sessionStorage.removeItem('email_just_verified');
+        }
+        if (emailVerifiedAndLoggedIn) {
+            sessionStorage.removeItem('email_verified_and_logged_in');
         }
         
         const hasSubscription = await this.checkSubscriptionStatus(user);

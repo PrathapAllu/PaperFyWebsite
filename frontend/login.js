@@ -189,6 +189,10 @@ class LoginPage {
             const result = await authService.signIn(email, password, rememberMe);
             if (result.success) {
                 this.sendToExtension(result.data);
+                const emailJustVerified = sessionStorage.getItem('email_just_verified') === 'true';
+                if (emailJustVerified) {
+                    sessionStorage.setItem('email_verified_and_logged_in', 'true');
+                }
                 window.location.href = 'dashboard.html?new_session=true';
             } else {
                 this.showError(result.message || 'Login failed', result.error);
@@ -453,7 +457,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
         if (rememberMeFlag) {
             const userCheck = await authService.getCurrentUser();
-            if (userCheck.success && userCheck.data) {
+            if (userCheck.success && userCheck.data && userCheck.data.email_confirmed) {
                 window.location.href = 'dashboard.html';
                 return;
             } else {
