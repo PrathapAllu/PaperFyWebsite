@@ -88,9 +88,28 @@ class Dashboard {
         const emailJustVerified = sessionStorage.getItem('email_just_verified') === 'true';
         const emailVerifiedAndLoggedIn = sessionStorage.getItem('email_verified_and_logged_in') === 'true';
         const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+        const urlParams = new URLSearchParams(window.location.search);
+        const isNewSession = urlParams.get('new_session') === 'true';
         
-        // Skip email verification check if remember me is enabled and user has valid session
-        if (!user.email_confirmed && !emailJustVerified && !emailVerifiedAndLoggedIn && !rememberMeFlag) {
+        // Check if this is a fresh login session first
+        if (isNewSession) {
+            // Set session as active BEFORE any other checks
+            sessionStorage.setItem('current_session', 'active');
+            sessionStorage.setItem('fresh_login_session', 'true');
+            
+            // Clean up URL
+            const url = new URL(window.location);
+            url.searchParams.delete('new_session');
+            window.history.replaceState({}, document.title, url.pathname);
+            
+            // Remove fresh login flag after 3 seconds
+            setTimeout(() => {
+                sessionStorage.removeItem('fresh_login_session');
+            }, 3000);
+            
+            // For new sessions, skip email verification entirely
+            // Proceed to subscription check
+        } else if (!user.email_confirmed && !emailJustVerified && !emailVerifiedAndLoggedIn && !rememberMeFlag) {
             // Only remove remember me flag if user is not verified and doesn't have remember me
             if (!rememberMeFlag) {
                 localStorage.removeItem('stepdoc_remember_me');
@@ -112,9 +131,6 @@ class Dashboard {
             return;
         }
         
-        const urlParams = new URLSearchParams(window.location.search);
-        const isNewSession = urlParams.get('new_session') === 'true';
-        
         // Re-read rememberMeFlag to ensure we have the latest value
         const currentRememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
         
@@ -123,21 +139,6 @@ class Dashboard {
             await this.forceLogout();
             this.redirectToLogin();
             return;
-        }
-        
-        if (isNewSession) {
-            // Set session as active BEFORE cleaning URL to prevent race conditions
-            sessionStorage.setItem('current_session', 'active');
-            // Also set a flag to indicate this is a fresh login session
-            sessionStorage.setItem('fresh_login_session', 'true');
-            const url = new URL(window.location);
-            url.searchParams.delete('new_session');
-            window.history.replaceState({}, document.title, url.pathname);
-            
-            // Remove fresh login flag after 2 seconds to prevent permanent bypass
-            setTimeout(() => {
-                sessionStorage.removeItem('fresh_login_session');
-            }, 2000);
         }
     }
 

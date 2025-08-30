@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const userCheck = await authService.getCurrentUser();
             if (userCheck.success && userCheck.data) {
                 // Allow access if remember me is enabled, regardless of email confirmation
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.html?new_session=true';
                 return;
             } else {
                 localStorage.removeItem('stepdoc_remember_me');
