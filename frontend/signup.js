@@ -308,6 +308,8 @@ class SignupPage {
             this.showMessage('Please fix all validation errors before submitting', 'error');
             return;
         }
+
+        this.setLoadingState(true);
         
         const userData = {
             email: this.email.value.trim(),
@@ -323,9 +325,7 @@ class SignupPage {
             }
         };
         
-        try {
-            this.setLoadingState(true);
-            
+        try {            
             const result = await authService.signUp(userData.email, userData.password, userData.options.data);
             
             if (result.success) {
@@ -340,7 +340,9 @@ class SignupPage {
                 const errorMsg = result.message || 'Failed to create account. Please try again.';
                 if (errorMsg.toLowerCase().includes('user already registered') || 
                     errorMsg.toLowerCase().includes('already been registered') ||
-                    errorMsg.toLowerCase().includes('email already registered')) {
+                    errorMsg.toLowerCase().includes('email already registered') ||
+                    errorMsg.toLowerCase().includes('user already exists') ||
+                    errorMsg.toLowerCase().includes('email already exists')) {
                     this.showMessage('Account already exists. Redirecting to login...', 'info');
                     setTimeout(() => {
                         window.location.href = `login.html?message=Account already exists. Please sign in.&email=${encodeURIComponent(userData.email)}`;
