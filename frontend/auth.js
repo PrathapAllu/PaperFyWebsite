@@ -41,7 +41,7 @@ class AuthService {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
             
-            const redirectUrl = window.config?.getDashboardUrl() || 'https://stepdoc-zeta.vercel.app/dashboard.html';
+            const redirectUrl = window.config?.getLoginUrl() || 'https://stepdoc-zeta.vercel.app/login.html';
             
             const { data, error } = await supabase.auth.signUp({
                 email: email,

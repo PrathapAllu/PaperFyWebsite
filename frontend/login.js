@@ -38,6 +38,7 @@ class LoginPage {
         this.setupElements();
         this.setupEventListeners();
         this.checkExtensionConnection();
+        this.handleEmailVerification();
         this.checkUrlMessage();
     }
 
@@ -89,6 +90,51 @@ class LoginPage {
         
         if (fromExtension) {
             this.showExtensionMessage();
+        }
+    }
+
+    async handleEmailVerification() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+
+        if (error) {
+            this.showError(decodeURIComponent(errorDescription || 'Email verification failed'));
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+
+        if (accessToken && refreshToken) {
+            try {
+                const { data, error: sessionError } = await window.supabaseClient.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                });
+
+                if (sessionError) {
+                    throw sessionError;
+                }
+
+                if (data.user && data.user.email_confirmed) {
+                    this.showSuccess('Email verified successfully! You can now sign in.');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    if (this.loginEmail) {
+                        this.loginEmail.value = data.user.email;
+                        if (this.loginPassword) {
+                            this.loginPassword.focus();
+                        }
+                    }
+                } else {
+                    this.showError('Email verification incomplete. Please try again.');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            } catch (error) {
+                this.showError('Email verification failed. Please try again.');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
         }
     }
 
