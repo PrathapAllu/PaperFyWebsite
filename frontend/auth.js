@@ -91,6 +91,14 @@ class AuthService {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
+            
+            // Set the remember me flag in localStorage
+            if (persistSession) {
+                localStorage.setItem('stepdoc_remember_me', 'true');
+            } else {
+                localStorage.removeItem('stepdoc_remember_me');
+            }
+            
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password

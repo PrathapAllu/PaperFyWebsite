@@ -19,6 +19,7 @@ class Dashboard {
             this.initializeEventListeners();
             this.loadUserData();
             this.loadDashboardData();
+            this.setupVisibilityHandler(); // Fix issue #3: Setup visibility handler
         } catch (error) {
             const loadingOverlay = document.getElementById('dashboardLoadingOverlay');
             const mainContent = document.getElementById('mainDashboardContent');
@@ -30,13 +31,28 @@ class Dashboard {
 
     async checkAuthStatus() {
         try {
-            const { data: { user }, error } = await window.supabaseClient.auth.getUser();
-            if (error || !user) {
+            // Check if remember me is enabled
+            const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
+            
+            if (!rememberMeFlag) {
+                // If remember me is not checked, redirect to login
                 this.redirectToLogin();
                 return;
             }
+            
+            // Check if user has valid session
+            const { data: { user }, error } = await window.supabaseClient.auth.getUser();
+            if (error || !user) {
+                // Clear invalid remember me flag and redirect to login
+                localStorage.removeItem('stepdoc_remember_me');
+                this.redirectToLogin();
+                return;
+            }
+            
             this.currentUser = user;
         } catch (error) {
+            // Clear any invalid state and redirect to login
+            localStorage.removeItem('stepdoc_remember_me');
             this.redirectToLogin();
         }
     }
@@ -377,12 +393,16 @@ class Dashboard {
     async handleLogout() {
         try {
             const { error } = await window.supabaseClient.auth.signOut();
+            // Clear the remember me flag when logging out
             localStorage.removeItem('stepdoc_remember_me');
             if (error) {
                 return;
             }
             this.redirectToLogin();
         } catch (error) {
+            // Clear the flag even if there's an error
+            localStorage.removeItem('stepdoc_remember_me');
+            this.redirectToLogin();
         }
     }
 
