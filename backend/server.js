@@ -644,8 +644,16 @@ app.post('/api/auth/reset-password',
             });
         }
 
+        const host = req.get('host') || '';
+        const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+        const redirectUrl = isLocalhost 
+            ? 'http://localhost:3000/reset-password.html'
+            : 'https://stepdoc-zeta.vercel.app/reset-password.html';
+            
+        console.log('Password reset request for email:', email, 'with redirect URL:', redirectUrl);
+            
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: 'https://stepdoc-zeta.vercel.app/reset-password.html'
+            redirectTo: redirectUrl
         });
 
         if (error) {

@@ -251,8 +251,13 @@ class AuthService {
         try {
             await this.waitForSupabase();
             const supabase = this.getSupabaseClient();
+            
+            const redirectUrl = window.config?.getResetPasswordUrl() || 'https://stepdoc-zeta.vercel.app/reset-password.html';
+            
+            console.log('Sending password reset email with redirect URL:', redirectUrl);
+            
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: 'https://stepdoc-zeta.vercel.app/reset-password.html'
+                redirectTo: redirectUrl
             });
             if (error) {
                 throw error;

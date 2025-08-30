@@ -14,7 +14,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     let supabase = getSupabaseClient();
     if (!supabase && window.supabase && window.supabase.createClient) {
-        supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        const supabaseUrl = window.config?.getSupabaseUrl();
+        const supabaseKey = window.config?.getSupabaseAnonKey();
+        
+        if (supabaseUrl && supabaseKey) {
+            supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        }
     }
     if (supabase) {
         const { data: { session } } = await supabase.auth.getSession();
