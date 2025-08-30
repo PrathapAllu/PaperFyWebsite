@@ -108,6 +108,41 @@ class Dashboard {
                 }
             });
         }
+
+        const contactSupportBtn = document.getElementById('contactSupportBtn');
+        const contactModal = document.getElementById('contactModal');
+        const closeContactModal = document.getElementById('closeContactModal');
+        const contactForm = document.getElementById('contactForm');
+
+        if (contactSupportBtn && contactModal) {
+            contactSupportBtn.addEventListener('click', () => {
+                contactModal.classList.add('show');
+            });
+
+            if (closeContactModal) {
+                closeContactModal.addEventListener('click', () => {
+                    contactModal.classList.remove('show');
+                });
+            }
+
+            contactModal.addEventListener('click', (e) => {
+                if (e.target === contactModal) {
+                    contactModal.classList.remove('show');
+                }
+            });
+
+            if (contactForm) {
+                contactForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(contactForm);
+                    const data = Object.fromEntries(formData);
+                    console.log('Contact form submitted:', data);
+                    alert('Thank you for your message! We will get back to you soon.');
+                    contactModal.classList.remove('show');
+                    contactForm.reset();
+                });
+            }
+        }
     }
 
 

@@ -117,8 +117,39 @@
                 </div>
             </div>
 
-
         </main>
+
+        <div class="contact-support-btn" id="contactSupportBtn">
+            <span class="btn-text">Contact Support</span>
+        </div>
+
+        <div class="contact-modal" id="contactModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Contact Support</h3>
+                    <button class="close-btn" id="closeContactModal">&times;</button>
+                </div>
+                <form class="contact-form" id="contactForm">
+                    <div class="form-group">
+                        <label for="contactName">Name</label>
+                        <input type="text" id="contactName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactEmail">Email</label>
+                        <input type="email" id="contactEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactSubject">Subject</label>
+                        <input type="text" id="contactSubject" name="subject" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactMessage">Message</label>
+                        <textarea id="contactMessage" name="message" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Send Message</button>
+                </form>
+            </div>
+        </div>
     </div>
 
 
