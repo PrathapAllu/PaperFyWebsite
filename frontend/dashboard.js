@@ -81,13 +81,7 @@ class Dashboard {
             });
         }
 
-        // Navigation items
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-            item.addEventListener('click', () => {
-                this.handleNavigation(item);
-            });
-        });
+
 
         // Quick action buttons
         const actionBtns = document.querySelectorAll('.action-btn');
@@ -97,91 +91,11 @@ class Dashboard {
             });
         });
 
-        // Mobile sidebar toggle (for responsive design)
-        this.initializeMobileNavigation();
+
     }
 
-    initializeMobileNavigation() {
-        const sideNav = document.querySelector('.side-nav');
-        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-        const mobileOverlay = document.querySelector('.mobile-overlay');
-        
-        if (mobileMenuBtn && sideNav && mobileOverlay) {
-            // Remove any existing event listeners by cloning the button
-            const newMobileMenuBtn = mobileMenuBtn.cloneNode(true);
-            mobileMenuBtn.parentNode.replaceChild(newMobileMenuBtn, mobileMenuBtn);
-            
-            // Add click event to toggle menu
-            newMobileMenuBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.toggleMobileMenu();
-            });
-            
-            // Add click event to overlay to close menu
-            mobileOverlay.addEventListener('click', () => {
-                this.closeMobileMenu();
-            });
-            
-            // Close menu when clicking on nav items
-            const navItems = sideNav.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    if (window.innerWidth <= 768) {
-                        this.closeMobileMenu();
-                    }
-                });
-            });
-            
-            // Close menu on escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && sideNav.classList.contains('mobile-open')) {
-                    this.closeMobileMenu();
-                }
-            });
-        }
-    }
-    
-    toggleMobileMenu() {
-        const sideNav = document.querySelector('.side-nav');
-        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-        const mobileOverlay = document.querySelector('.mobile-overlay');
-        
-        if (sideNav && mobileMenuBtn && mobileOverlay) {
-            const isOpen = sideNav.classList.contains('mobile-open');
-            
-            if (isOpen) {
-                this.closeMobileMenu();
-            } else {
-                this.openMobileMenu();
-            }
-        }
-    }
-    
-    openMobileMenu() {
-        const sideNav = document.querySelector('.side-nav');
-        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-        const mobileOverlay = document.querySelector('.mobile-overlay');
-        
-        if (sideNav && mobileMenuBtn && mobileOverlay) {
-            sideNav.classList.add('mobile-open');
-            mobileMenuBtn.classList.add('active');
-            mobileOverlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-    
-    closeMobileMenu() {
-        const sideNav = document.querySelector('.side-nav');
-        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-        const mobileOverlay = document.querySelector('.mobile-overlay');
-        
-        if (sideNav && mobileMenuBtn && mobileOverlay) {
-            sideNav.classList.remove('mobile-open');
-            mobileMenuBtn.classList.remove('active');
-            mobileOverlay.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    }
+
+
 
     loadUserData() {
         if (!this.currentUser) return;
@@ -281,42 +195,7 @@ class Dashboard {
         }
     }
 
-    handleNavigation(navItem) {
-        // Remove active class from all nav items
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        
-        // Add active class to clicked item
-        navItem.classList.add('active');
-        
-        // Get the navigation target
-        const target = navItem.dataset.nav;
-        
-        // Handle navigation based on target
-        switch (target) {
-            case 'dashboard':
-                this.showDashboard();
-                break;
-            case 'documents':
-                this.showDocuments();
-                break;
-            case 'projects':
-                this.showProjects();
-                break;
-            case 'team':
-                this.showTeam();
-                break;
-            case 'analytics':
-                this.showAnalytics();
-                break;
-            case 'settings':
-                this.showSettings();
-                break;
-            default:
-                console.log('Navigation not implemented:', target);
-        }
-    }
+
 
     handleQuickAction(actionBtn) {
         const action = actionBtn.dataset.action;
@@ -339,36 +218,7 @@ class Dashboard {
         }
     }
 
-    // Navigation methods (placeholder implementations)
-    showDashboard() {
-        console.log('Showing dashboard');
-        // Implementation for dashboard view
-    }
 
-    showDocuments() {
-        console.log('Showing documents');
-        // Implementation for documents view
-    }
-
-    showProjects() {
-        console.log('Showing projects');
-        // Implementation for projects view
-    }
-
-    showTeam() {
-        console.log('Showing team');
-        // Implementation for team view
-    }
-
-    showAnalytics() {
-        console.log('Showing analytics');
-        // Implementation for analytics view
-    }
-
-    showSettings() {
-        console.log('Showing settings');
-        // Implementation for settings view
-    }
 
     // Quick action methods (placeholder implementations)
     createNewDocument() {
@@ -408,7 +258,7 @@ class Dashboard {
     viewAnalytics() {
         console.log('Viewing analytics');
         // Implementation for analytics view
-        this.handleNavigation(document.querySelector('[data-nav="analytics"]'));
+        alert('Analytics view will be implemented soon!');
     }
 
     // Utility methods
@@ -508,10 +358,4 @@ window.addEventListener('popstate', (event) => {
     console.log('Navigation state changed');
 });
 
-// Handle window resize for responsive behavior
-window.addEventListener('resize', () => {
-    const dashboard = window.dashboardInstance;
-    if (dashboard) {
-        dashboard.initializeMobileNavigation();
-    }
-});
+

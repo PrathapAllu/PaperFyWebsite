@@ -10,190 +10,52 @@
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
-    <!-- Loading Overlay -->
+
     <div id="dashboardLoadingOverlay" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">Checking authentication...</div>
 
-    <!-- Main Dashboard Content Wrapper -->
+
     <div id="mainDashboardContent" style="display:none;">
-        <!-- Top Navigation -->
+
         <nav class="top-nav">
-            <div class="nav-left">
-                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
-                    <span class="hamburger-line"></span>
-                    <span class="hamburger-line"></span>
-                    <span class="hamburger-line"></span>
-                </button>
-                <div class="logo">
-                    <img src="assets/logo.svg" alt="StepDoc" class="logo-img">
-                    <span class="logo-text">StepDoc</span>
-                </div>
+            <div class="logo">
+                <img src="assets/logo.svg" alt="StepDoc" class="logo-img">
+                <span class="logo-text">StepDoc</span>
             </div>
             
-            <div class="nav-right">
-                <div class="user-menu">
-                    <div class="user-avatar" id="userAvatar">
-                        <span class="user-initial">U</span>
+            <div class="user-menu">
+                <div class="user-avatar" id="userAvatar">
+                    <span class="user-initial">U</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dropdown-header">
+                        <div class="user-info">
+                            <div class="user-name" id="userName">User Name</div>
+                            <div class="user-email" id="userEmail">user@example.com</div>
+                        </div>
                     </div>
-                    <div class="user-dropdown" id="userDropdown">
-                        <div class="dropdown-header">
-                            <div class="user-info">
-                                <div class="user-name" id="userName">User Name</div>
-                                <div class="user-email" id="userEmail">user@example.com</div>
-                            </div>
-                        </div>
-                        <div class="dropdown-divider"></div>
-                        <div class="dropdown-items">
-                            <a href="#" class="dropdown-item">
-                                <span class="item-icon">👤</span>
-                                Profile Settings
-                            </a>
-                            <a href="#" class="dropdown-item">
-                                <span class="item-icon">⚙️</span>
-                                Account Settings
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="#" class="dropdown-item logout-item" id="logoutBtn">
-                                <span class="item-icon">🚪</span>
-                                Logout
-                            </a>
-                        </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-items">
+                        <a href="#" class="dropdown-item logout-item" id="logoutBtn">
+                            <span class="item-icon">🚪</span>
+                            Logout
+                        </a>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <!-- Mobile Menu Overlay -->
-        <div class="mobile-overlay" id="mobileOverlay"></div>
 
-        <!-- Side Navigation -->
-        <nav class="side-nav" id="sideNav">
-            <div class="nav-items">
-                <div class="nav-item active" data-tooltip="Dashboard">
-                    <span class="nav-icon">📊</span>
-                    <span class="nav-label">Dashboard</span>
-                </div>
-                <div class="nav-item" data-tooltip="Documents">
-                    <span class="nav-icon">📄</span>
-                    <span class="nav-label">Documents</span>
-                </div>
-                <div class="nav-item" data-tooltip="Analytics">
-                    <span class="nav-icon">📈</span>
-                    <span class="nav-label">Analytics</span>
-                </div>
-                <div class="nav-item" data-tooltip="Templates">
-                    <span class="nav-icon">📋</span>
-                    <span class="nav-label">Templates</span>
-                </div>
-                <div class="nav-item" data-tooltip="Settings">
-                    <span class="nav-icon">⚙️</span>
-                    <span class="nav-label">Settings</span>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
         <main class="main-content" id="mainContent">
             <div class="content-header">
                 <h1 class="page-title">Dashboard</h1>
                 <div class="page-subtitle">Welcome back! Here's what's happening with your documentation.</div>
             </div>
 
-            <div class="dashboard-grid">
-                <!-- Stats Cards -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">📄</div>
-                        <div class="stat-content">
-                            <div class="stat-number">24</div>
-                            <div class="stat-label">Documents</div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">👥</div>
-                        <div class="stat-content">
-                            <div class="stat-number">1,234</div>
-                            <div class="stat-label">Views</div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">⭐</div>
-                        <div class="stat-content">
-                            <div class="stat-number">98%</div>
-                            <div class="stat-label">Satisfaction</div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon">🚀</div>
-                        <div class="stat-content">
-                            <div class="stat-number">156</div>
-                            <div class="stat-label">AI Generations</div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Recent Activity -->
-                <div class="activity-section">
-                    <h2 class="section-title">Recent Activity</h2>
-                    <div class="activity-list">
-                        <div class="activity-item">
-                            <div class="activity-icon">📄</div>
-                            <div class="activity-content">
-                                <div class="activity-title">API Documentation Updated</div>
-                                <div class="activity-time">2 hours ago</div>
-                            </div>
-                        </div>
-                        
-                        <div class="activity-item">
-                            <div class="activity-icon">🤖</div>
-                            <div class="activity-content">
-                                <div class="activity-title">AI Generated User Guide</div>
-                                <div class="activity-time">5 hours ago</div>
-                            </div>
-                        </div>
-                        
-                        <div class="activity-item">
-                            <div class="activity-icon">👥</div>
-                            <div class="activity-content">
-                                <div class="activity-title">Team Member Added</div>
-                                <div class="activity-time">1 day ago</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="quick-actions">
-                    <h2 class="section-title">Quick Actions</h2>
-                    <div class="action-grid">
-                        <button class="action-btn">
-                            <span class="action-icon">✨</span>
-                            <span class="action-label">Generate with AI</span>
-                        </button>
-                        
-                        <button class="action-btn">
-                            <span class="action-icon">📝</span>
-                            <span class="action-label">New Document</span>
-                        </button>
-                        
-                        <button class="action-btn">
-                            <span class="action-icon">📤</span>
-                            <span class="action-label">Import Files</span>
-                        </button>
-                        
-                        <button class="action-btn">
-                            <span class="action-icon">📊</span>
-                            <span class="action-label">View Analytics</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
         </main>
     </div>
 
-    <!-- Scripts -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // Initialize Supabase
