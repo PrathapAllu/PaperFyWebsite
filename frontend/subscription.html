@@ -25,8 +25,19 @@
             <p>Start with our free plan or upgrade to unlock premium features</p>
         </div>
 
+        <div class="billing-toggle">
+            <span class="toggle-label">Billing frequency</span>
+            <div class="toggle-container">
+                <button class="toggle-option active" data-period="monthly">Monthly</button>
+                <button class="toggle-option" data-period="yearly">
+                    Yearly
+                    <span class="discount-badge">20% OFF</span>
+                </button>
+            </div>
+        </div>
+
         <div class="plans-container">
-            <div class="plan-card free-plan">
+            <div class="plan-card free-plan" data-plan="free">
                 <div class="plan-header">
                     <h3>Free</h3>
                     <div class="price">
@@ -51,7 +62,7 @@
                 <button class="plan-button free-button" data-plan="free">Get Started for Free</button>
             </div>
 
-            <div class="plan-card pro-plan">
+            <div class="plan-card pro-plan" data-plan="pro">
                 <div class="plan-header">
                     <h3>Pro</h3>
                     <div class="price">
@@ -84,7 +95,7 @@
                 <button class="plan-button pro-button" data-plan="pro">Get Started for Free</button>
             </div>
 
-            <div class="plan-card pro-plus-plan popular">
+            <div class="plan-card pro-plus-plan popular" data-plan="pro_plus">
                 <div class="popular-badge">Most Popular</div>
                 <div class="plan-header">
                     <h3>Pro Plus</h3>

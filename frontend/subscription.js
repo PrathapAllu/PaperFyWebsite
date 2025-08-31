@@ -139,6 +139,13 @@ class SubscriptionPage {
             });
         });
 
+        const toggleOptions = document.querySelectorAll('.toggle-option');
+        toggleOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                this.handleBillingToggle(e);
+            });
+        });
+
         const backButton = document.getElementById('backButton');
         if (backButton) {
             backButton.addEventListener('click', () => {
@@ -152,6 +159,39 @@ class SubscriptionPage {
                 this.handlePaymentSubmit(e);
             });
         }
+    }
+
+    handleBillingToggle(event) {
+        const clickedOption = event.currentTarget;
+        const period = clickedOption.dataset.period;
+        
+        document.querySelectorAll('.toggle-option').forEach(option => {
+            option.classList.remove('active');
+        });
+        
+        clickedOption.classList.add('active');
+        
+        this.updatePricing(period);
+    }
+
+    updatePricing(period) {
+        const monthlyPrices = { pro: 9.99, pro_plus: 14.99 };
+        const yearlyPrices = { pro: 7.99, pro_plus: 11.99 };
+        
+        const prices = period === 'yearly' ? yearlyPrices : monthlyPrices;
+        const suffix = period === 'yearly' ? '/year' : '/month';
+        
+        Object.keys(prices).forEach(planType => {
+            const priceElement = document.querySelector(`[data-plan="${planType}"] .price .amount`);
+            const periodElement = document.querySelector(`[data-plan="${planType}"] .price .period`);
+            
+            if (priceElement) {
+                priceElement.textContent = `$${prices[planType]}`;
+            }
+            if (periodElement) {
+                periodElement.textContent = suffix;
+            }
+        });
     }
 
     handlePlanSelection(event) {
