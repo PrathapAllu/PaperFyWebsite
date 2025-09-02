@@ -1,19 +1,39 @@
 class SubscriptionPage {
-    constructor() {
+    constructor(isModalContext = false) {
         this.stripe = null;
         this.cardElement = null;
         this.selectedPlan = null;
         this.currentUser = null;
+        this.isModalContext = isModalContext;
         this.init();
     }
 
     async init() {
         try {
-            await this.handleAuthFlow();
+            if (!this.isModalContext) {
+                await this.handleAuthFlow();
+            } else {
+                // In modal context, try to get current user from existing session
+                await this.getCurrentUser();
+            }
             await this.initializeStripe();
             this.initializeEventListeners();
         } catch (error) {
-            this.redirectToLogin();
+            if (!this.isModalContext) {
+                this.redirectToLogin();
+            }
+        }
+    }
+
+    async getCurrentUser() {
+        try {
+            const { data: { user }, error } = await window.supabaseClient.auth.getUser();
+            if (user) {
+                this.currentUser = user;
+                this.populateUserData();
+            }
+        } catch (error) {
+            console.error('Error getting current user:', error);
         }
     }
 
@@ -216,7 +236,14 @@ class SubscriptionPage {
             
             setTimeout(() => {
                 this.showLoading(false);
-                window.location.href = 'dashboard.html?skip_subscription=true';
+                
+                if (this.isModalContext) {
+                    // Close modal and stay on dashboard
+                    this.closeModal();
+                } else {
+                    // Redirect to dashboard (original behavior)
+                    window.location.href = 'dashboard.html?skip_subscription=true';
+                }
             }, 1000);
             
         } catch (error) {
@@ -328,7 +355,13 @@ class SubscriptionPage {
             this.showSuccess();
             
             setTimeout(() => {
-                window.location.href = 'dashboard.html?skip_subscription=true';
+                if (this.isModalContext) {
+                    // Close modal and stay on dashboard
+                    this.closeModal();
+                } else {
+                    // Redirect to dashboard (original behavior)
+                    window.location.href = 'dashboard.html?skip_subscription=true';
+                }
             }, 2000);
 
         } catch (error) {
@@ -490,35 +523,46 @@ class SubscriptionPage {
         return container;
     }
 
+    closeModal() {
+        const modalOverlay = document.getElementById('subscriptionModalOverlay');
+        if (modalOverlay) {
+            modalOverlay.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+
     redirectToLogin(params = '') {
         window.location.href = `login.html${params}`;
     }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        let attempts = 0;
-        const maxAttempts = 50;
-        
-        while (attempts < maxAttempts) {
-            const supabaseAvailable = typeof window.supabase !== 'undefined' && 
-                                    typeof window.supabase.createClient === 'function';
-            const stripeAvailable = typeof Stripe !== 'undefined';
+    if (window.location.pathname.includes('subscription.html') || 
+        window.location.pathname.includes('subscription-modal.html')) {
+        try {
+            let attempts = 0;
+            const maxAttempts = 50;
             
-            if (supabaseAvailable && stripeAvailable) {
-                break;
+            while (attempts < maxAttempts) {
+                const supabaseAvailable = typeof window.supabase !== 'undefined' && 
+                                        typeof window.supabase.createClient === 'function';
+                const stripeAvailable = typeof Stripe !== 'undefined';
+                
+                if (supabaseAvailable && stripeAvailable) {
+                    break;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
             }
             
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
+            if (attempts >= maxAttempts) {
+                throw new Error('Required libraries not available');
+            }
+            
+            new SubscriptionPage();
+        } catch (error) {
+            window.location.href = 'login.html';
         }
-        
-        if (attempts >= maxAttempts) {
-            throw new Error('Required libraries not available');
-        }
-        
-        new SubscriptionPage();
-    } catch (error) {
-        window.location.href = 'login.html';
     }
 });

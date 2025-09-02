@@ -214,7 +214,7 @@
 
                     <div class="main-heading">
                         <h1>Choose Your Plan</h1>
-                        <p>Start with our free plan or upgrade to unlock premium features</p>
+                        <p>Choose your plan to continue or start with our free plan</p>
                     </div>
 
                     <div class="billing-toggle">
@@ -251,7 +251,7 @@
                                     <span>Chrome extension</span>
                                 </div>
                             </div>
-                            <button class="plan-button free-button" data-plan="free">Get Started for Free</button>
+                            <button class="plan-button free-button" data-plan="free">Continue for Free</button>
                         </div>
 
                         <div class="plan-card pro-plan popular" data-plan="pro">
@@ -416,13 +416,19 @@
     <script src="subscription.js"></script>
     <script>
         function closeModal() {
-            const modalOverlay = document.getElementById('modalOverlay');
-            modalOverlay.style.display = 'none';
+            const modalOverlay = document.getElementById('modalOverlay') || document.getElementById('subscriptionModalOverlay');
+            if (modalOverlay) {
+                modalOverlay.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
         }
 
         function openModal() {
-            const modalOverlay = document.getElementById('modalOverlay');
-            modalOverlay.style.display = 'flex';
+            const modalOverlay = document.getElementById('modalOverlay') || document.getElementById('subscriptionModalOverlay');
+            if (modalOverlay) {
+                modalOverlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
         }
 
         document.addEventListener('keydown', function(event) {
@@ -431,11 +437,15 @@
             }
         });
 
-        document.getElementById('modalOverlay').addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeModal();
-            }
-        });
+        // Handle click outside modal for both modal contexts
+        const modalOverlay = document.getElementById('modalOverlay') || document.getElementById('subscriptionModalOverlay');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeModal();
+                }
+            });
+        }
 
         window.openSubscriptionModal = openModal;
         window.closeSubscriptionModal = closeModal;

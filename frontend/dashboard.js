@@ -125,10 +125,9 @@ class Dashboard {
             sessionStorage.removeItem('email_verified_and_logged_in');
         }
         
-        const hasSubscription = await this.checkSubscriptionStatus(user);
-        if (!hasSubscription) {
-            window.location.href = 'subscription.html';
-            return;
+        const subscriptionInfo = await this.checkSubscriptionStatus(user);
+        if (subscriptionInfo.shouldShowModal) {
+            await this.showSubscriptionModal();
         }
         
         // Re-read rememberMeFlag to ensure we have the latest value
@@ -148,7 +147,7 @@ class Dashboard {
             const skipSubscription = urlParams.get('skip_subscription') === 'true';
             
             if (skipSubscription) {
-                return true;
+                return { shouldShowModal: false, hasSubscription: true };
             }
             
             const subscriptionData = localStorage.getItem('user_subscription');
@@ -157,14 +156,24 @@ class Dashboard {
                 const now = new Date();
                 const expiryDate = new Date(subscription.expiresAt);
                 
-                if (subscription.planType === 'free' || now < expiryDate) {
-                    return true;
+                // Pro or Pro Plus users with active subscriptions - no modal
+                if ((subscription.planType === 'pro' || subscription.planType === 'pro_plus') && now < expiryDate) {
+                    return { shouldShowModal: false, hasSubscription: true };
                 }
+                
+                // Free users or expired paid plans - show modal
+                if (subscription.planType === 'free' || now >= expiryDate) {
+                    return { shouldShowModal: true, hasSubscription: true };
+                }
+                
+                // Any other valid subscription - no modal
+                return { shouldShowModal: false, hasSubscription: true };
             }
             
-            return false;
+            // No subscription data - show modal for free users
+            return { shouldShowModal: true, hasSubscription: false };
         } catch (error) {
-            return false;
+            return { shouldShowModal: true, hasSubscription: false };
         }
     }
 
@@ -512,55 +521,6 @@ class Dashboard {
         }
     }
 
-    updateStats(stats) {
-        const statNumbers = document.querySelectorAll('.stat-number');
-        
-        if (statNumbers[0]) statNumbers[0].textContent = stats.documents;
-        if (statNumbers[1]) statNumbers[1].textContent = stats.collaborators;
-        if (statNumbers[2]) statNumbers[2].textContent = stats.projects;
-        if (statNumbers[3]) statNumbers[3].textContent = `${stats.storage}%`;
-    }
-
-    loadRecentActivity() {
-        const activities = [
-            {
-                icon: '📄',
-                title: 'Created new document "Project Proposal"',
-                time: '2 minutes ago'
-            },
-            {
-                icon: '👥',
-                title: 'Added collaborator to Marketing Team',
-                time: '1 hour ago'
-            },
-            {
-                icon: '✅',
-                title: 'Completed review for Q4 Report',
-                time: '3 hours ago'
-            },
-            {
-                icon: '💾',
-                title: 'Exported document to PDF',
-                time: '1 day ago'
-            }
-        ];
-
-        const activityList = document.querySelector('.activity-list');
-        if (activityList) {
-            activityList.innerHTML = activities.map(activity => `
-                <div class="activity-item">
-                    <div class="activity-icon">${activity.icon}</div>
-                    <div class="activity-content">
-                        <div class="activity-title">${activity.title}</div>
-                        <div class="activity-time">${activity.time}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-    }
-
-
-
     handleQuickAction(actionBtn) {
         const action = actionBtn.dataset.action;
         switch (action) {
@@ -605,33 +565,6 @@ class Dashboard {
 
     viewAnalytics() {
     // ...existing code...
-    }
-
-
-
-    // Quick action methods (placeholder implementations)
-    createNewDocument() {
-    // ...existing code...
-    }
-
-    uploadFile() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.pdf,.doc,.docx,.txt';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                // ...existing code...
-            }
-        };
-        input.click();
-    }
-
-    inviteTeamMember() {
-        const email = prompt('Enter email address to invite:');
-        if (email && this.isValidEmail(email)) {
-            // ...existing code...
-        }
     }
 
     isValidEmail(email) {
@@ -731,6 +664,118 @@ class Dashboard {
                 }
             }, 500); // Small delay to ensure initialization is complete
         });
+    }
+
+    async showSubscriptionModal() {
+        try {
+            await this.loadSubscriptionModal();
+            const modalOverlay = document.getElementById('subscriptionModalOverlay');
+            if (modalOverlay) {
+                modalOverlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        } catch (error) {
+            console.error('Error showing subscription modal:', error);
+        }
+    }
+
+    async loadSubscriptionModal() {
+        // Check if modal is already loaded
+        if (document.getElementById('subscriptionModalOverlay')) {
+            return;
+        }
+
+        try {
+            // Load Stripe if not already loaded
+            if (typeof Stripe === 'undefined') {
+                await this.loadScript('https://js.stripe.com/v3/');
+            }
+
+            const response = await fetch('subscription-modal.html');
+            const html = await response.text();
+            
+            // Extract just the modal content from the HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const modalOverlay = doc.querySelector('.modal-overlay');
+            
+            if (modalOverlay) {
+                // Add an ID for easier reference
+                modalOverlay.id = 'subscriptionModalOverlay';
+                
+                // Append to body
+                document.body.appendChild(modalOverlay);
+                
+                // Load subscription CSS if not already loaded
+                if (!document.querySelector('link[href="subscription.css"]')) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = 'subscription.css';
+                    document.head.appendChild(link);
+                }
+                
+                // Initialize subscription functionality
+                this.initializeSubscriptionModal();
+            }
+        } catch (error) {
+            console.error('Error loading subscription modal:', error);
+        }
+    }
+
+    loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    initializeSubscriptionModal() {
+        if (typeof SubscriptionPage !== 'undefined') {
+            new SubscriptionPage(true);
+        } else {
+            if (!document.querySelector('script[src="subscription.js"]')) {
+                const script = document.createElement('script');
+                script.src = 'subscription.js';
+                script.onload = () => {
+                    if (typeof SubscriptionPage !== 'undefined') {
+                        new SubscriptionPage(true);
+                    }
+                };
+                document.head.appendChild(script);
+            } else {
+                setTimeout(() => {
+                    if (typeof SubscriptionPage !== 'undefined') {
+                        new SubscriptionPage(true);
+                    }
+                }, 100);
+            }
+        }
+        
+        const modalClose = document.getElementById('modalClose');
+        const modalOverlay = document.getElementById('subscriptionModalOverlay');
+        
+        if (modalClose) {
+            modalClose.addEventListener('click', () => this.closeSubscriptionModal());
+        }
+        
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) {
+                    this.closeSubscriptionModal();
+                }
+            });
+        }
+    }
+
+    closeSubscriptionModal() {
+        const modalOverlay = document.getElementById('subscriptionModalOverlay');
+        if (modalOverlay) {
+            modalOverlay.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
     }
 
     redirectToLogin(params = '') {
