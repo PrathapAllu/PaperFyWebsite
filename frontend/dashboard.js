@@ -93,12 +93,22 @@ document.addEventListener("DOMContentLoaded", async function () {
       });
   }
 
-  const { data: { user: supaUser } } = await window.supabaseClient.auth.getUser();
-  if (!supaUser) {
-    window.location.href = "login.html";
-    return;
+  // Enhanced authentication check using AuthManager
+  if (window.authManager) {
+    const isAuthenticated = await window.authManager.requireAuth();
+    if (!isAuthenticated) {
+      return; // User will be redirected to login
+    }
+    user = window.authManager.user;
+  } else {
+    // Fallback to direct Supabase check
+    const { data: { user: supaUser } } = await window.supabaseClient.auth.getUser();
+    if (!supaUser) {
+      window.location.href = "login.html";
+      return;
+    }
+    user = supaUser;
   }
-  user = supaUser;
 
   userName.textContent = user.user_metadata?.full_name || user.user_metadata?.name || user.email;
   userEmail.textContent = user.email;
@@ -259,8 +269,8 @@ document.addEventListener("DOMContentLoaded", async function () {
       await window.supabaseClient.auth.signOut();
       window.location.href = "login.html";
     } catch (error) {
-      console.error("Error signing out:", error);
-      alert("Error signing out. Please try again.");
+      // Silent error handling for production
+      window.location.href = "login.html";
     }
   });
 

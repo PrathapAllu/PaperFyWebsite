@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
           const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-            redirectTo: `https://stepdoc-zeta.vercel.app/reset-password.html`
+            redirectTo: `${window.location.origin}/reset-password.html`
           });
 
           if (error) {
@@ -169,21 +169,94 @@ document.addEventListener("DOMContentLoaded", function () {
   // Login form submission
   loginForm.addEventListener("submit", async function (e) {
     e.preventDefault();
+    
     const email = document.getElementById("loginEmail").value;
     const password = document.getElementById("loginPassword").value;
     const rememberMe = document.getElementById("rememberMe").checked;
-    const expiresIn = rememberMe ? 432000 : 86400;
+    const privacyConsent = document.getElementById("privacyConsent").checked;
+    
+    // Clear any existing notifications
+    const existingNotification = document.querySelector('.login-notification');
+    if (existingNotification) {
+      existingNotification.remove();
+    }
 
-    const { data, error } = await window.supabaseClient.auth.signInWithPassword({
-      email,
-      password,
-      options: { expiresIn }
-    });
+    // Validate privacy consent
+    if (!privacyConsent) {
+      showLoginPageNotification("Please agree to the Privacy Policy to continue.", "error");
+      return;
+    }
 
-    if (!error && data.session) {
-      window.location.href = "dashboard.html";
-    } else {
-      // Handle error UI (e.g., show error message)
+    // Basic validation
+    if (!email || !password) {
+      showLoginPageNotification("Please enter both email and password.", "error");
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showLoginPageNotification("Please enter a valid email address.", "error");
+      return;
+    }
+
+    const loginBtn = loginForm.querySelector('.login-btn');
+    const btnText = loginBtn.querySelector('.btn-text');
+    const btnLoader = loginBtn.querySelector('.btn-loader');
+    
+    // Show loading state
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'block';
+    loginBtn.disabled = true;
+
+    try {
+      const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+        options: {
+          persistSession: rememberMe
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.session && data.user) {
+        // Store login preference
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
+        } else {
+          localStorage.removeItem('rememberMe');
+        }
+
+        showLoginPageNotification("Login successful! Redirecting...", "success");
+        
+        // Redirect after short delay
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 1000);
+      }
+
+    } catch (error) {
+      let errorMessage = "Login failed. Please check your credentials.";
+      
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please try again.";
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = "Please check your email and confirm your account before logging in.";
+      } else if (error.message.includes('Too many requests')) {
+        errorMessage = "Too many login attempts. Please wait a moment and try again.";
+      } else if (error.message.includes('network')) {
+        errorMessage = "Network error. Please check your internet connection.";
+      }
+      
+      showLoginPageNotification(errorMessage, "error");
+    } finally {
+      // Reset button state
+      btnText.style.display = 'block';
+      btnLoader.style.display = 'none';
+      loginBtn.disabled = false;
     }
   });
 
@@ -200,11 +273,9 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         
         if (error) {
-          console.error('Google auth error:', error);
           showLoginPageNotification('Google login failed. Please try again.', 'error');
         }
       } catch (error) {
-        console.error('Google auth error:', error);
         showLoginPageNotification('Google login failed. Please try again.', 'error');
       }
     });

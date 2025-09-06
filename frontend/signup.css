@@ -323,6 +323,14 @@ body {
     border-color: #ef4444;
 }
 
+.form-input.error {
+    border-color: #ef4444;
+}
+
+.form-input.success {
+    border-color: #10b981;
+}
+
 /* Password Toggle */
 .toggle-password {
     position: absolute;
@@ -379,18 +387,23 @@ body {
     border-radius: 2px;
 }
 
-.strength-fill.weak {
-    width: 25%;
+.strength-fill.very-weak {
+    width: 20%;
     background: #ef4444;
 }
 
-.strength-fill.medium {
-    width: 50%;
+.strength-fill.weak {
+    width: 40%;
     background: #f59e0b;
 }
 
+.strength-fill.fair {
+    width: 60%;
+    background: #eab308;
+}
+
 .strength-fill.good {
-    width: 75%;
+    width: 80%;
     background: #3b82f6;
 }
 
