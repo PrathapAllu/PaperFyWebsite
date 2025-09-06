@@ -133,6 +133,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // Clear all validation messages
+  function clearAllValidationMessages() {
+    const validationFields = ['firstName', 'lastName', 'email', 'phone', 'password', 'confirmPassword'];
+    validationFields.forEach(fieldName => {
+      showValidationMessage(fieldName, '', true);
+    });
+  }
+
   // Password strength calculator
   function calculatePasswordStrength(password) {
     let score = 0;
@@ -411,6 +419,35 @@ document.addEventListener("DOMContentLoaded", function () {
         newsletter: formData.get('newsletter') === 'on'  // Convert checkbox to boolean
       };
 
+      // Clear any existing error messages
+      clearAllValidationMessages();
+
+      // Check terms agreement first (similar to login page)
+      if (!data.agreeTerms) {
+        showMessage('Please agree to the Terms of Service and Privacy Policy to continue.');
+        
+        // Highlight the checkbox area
+        const checkboxContainer = document.querySelector('.checkbox-container');
+        if (checkboxContainer) {
+          checkboxContainer.style.border = '1px solid #ef4444';
+          checkboxContainer.style.borderRadius = '4px';
+          checkboxContainer.style.padding = '8px';
+          
+          // Remove highlight after 3 seconds
+          setTimeout(() => {
+            checkboxContainer.style.border = '';
+            checkboxContainer.style.padding = '';
+          }, 3000);
+        }
+        
+        // Focus the checkbox for accessibility
+        const agreeTermsCheckbox = document.getElementById('agreeTerms');
+        if (agreeTermsCheckbox) {
+          agreeTermsCheckbox.focus();
+        }
+        return;
+      }
+
       // Validate all fields
       let isFormValid = true;
       for (const [fieldName, value] of Object.entries(data)) {
@@ -428,26 +465,6 @@ document.addEventListener("DOMContentLoaded", function () {
       if (data.password !== data.confirmPassword) {
         showValidationMessage('confirmPassword', 'Passwords do not match', false);
         isFormValid = false;
-      }
-
-      // Check terms agreement
-      if (!data.agreeTerms) {
-        showMessage('Please agree to the Terms of Service and Privacy Policy to continue.');
-        
-        // Highlight the checkbox area
-        const checkboxContainer = document.querySelector('.checkbox-container');
-        if (checkboxContainer) {
-          checkboxContainer.style.border = '1px solid #ef4444';
-          checkboxContainer.style.borderRadius = '4px';
-          checkboxContainer.style.padding = '8px';
-          
-          // Remove highlight after 3 seconds
-          setTimeout(() => {
-            checkboxContainer.style.border = '';
-            checkboxContainer.style.padding = '';
-          }, 3000);
-        }
-        return;
       }
 
       if (!isFormValid) {
