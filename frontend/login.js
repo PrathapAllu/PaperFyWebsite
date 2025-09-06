@@ -284,4 +284,34 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+  if (data.session && data.user) {
+  if (rememberMe) {
+    localStorage.setItem('rememberMe', 'true');
+  } else {
+    localStorage.removeItem('rememberMe');
+  }
+
+  if (window.authManager) {
+    window.authManager.onSignIn(data.session);
+  }
+
+  notifyExtensionLogin(data.user);
+
+  showLoginPageNotification("Login successful! Redirecting...", "success");
+}
+
 });
+
+function notifyExtensionLogin(userData) {
+  if (window.chrome && chrome.runtime) {
+    try {
+      chrome.runtime.sendMessage('fceeckdhanpanhlgmnlldmchogncaifh', {
+        type: 'AUTH_STATUS_CHANGED',
+        isLoggedIn: true,
+        userName: userData.user_metadata?.full_name || userData.email,
+        timestamp: Date.now()
+      });
+    } catch (error) {}
+  }
+}

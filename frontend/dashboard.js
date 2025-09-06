@@ -345,6 +345,17 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 
+logoutBtn.addEventListener("click", async function(e) {
+  e.preventDefault();
+  try {
+    await window.supabaseClient.auth.signOut();
+    notifyExtensionLogout();
+    window.location.href = "login.html";
+  } catch (error) {
+    window.location.href = "login.html";
+  }
+});
+
   // Handle Windows download
   downloadBtn.addEventListener("click", function(e) {
     e.preventDefault();
@@ -361,7 +372,21 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
     }
   });
-
+  
   window.openSubscriptionModal = openSubscriptionModal;
   window.closeSubscriptionModal = closeSubscriptionModal;
 });
+
+
+function notifyExtensionLogout() {
+  if (window.chrome && chrome.runtime) {
+    try {
+      chrome.runtime.sendMessage('fceeckdhanpanhlgmnlldmchogncaifh', {
+        type: 'AUTH_STATUS_CHANGED',
+        isLoggedIn: false,
+        userName: null,
+        timestamp: Date.now()
+      });
+    } catch (error) {}
+  }
+}
