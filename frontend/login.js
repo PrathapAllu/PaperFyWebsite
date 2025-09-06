@@ -264,11 +264,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const googleBtn = document.querySelector('.google-btn');
   if (googleBtn) {
     googleBtn.addEventListener('click', async function() {
+      const isProd = window.location.hostname.includes('vercel.app');
+      const dashboardPath = isProd ? '/dashboard.html' : '/frontend/dashboard.html';
       try {
         const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/frontend/dashboard.html`
+            redirectTo: `${window.location.origin}${dashboardPath}`
           }
         });
         
