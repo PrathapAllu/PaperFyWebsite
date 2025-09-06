@@ -181,6 +181,8 @@ document.addEventListener("DOMContentLoaded", function () {
   setupPasswordToggle('togglePassword', 'password');
   setupPasswordToggle('toggleConfirmPassword', 'confirmPassword');
 
+
+
   // Show message to user
   function showMessage(message, type = 'error') {
     if (!messageContainer) return;
@@ -188,7 +190,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const messageText = document.getElementById('messageText');
     const messageIcon = document.getElementById('messageIcon');
     
-    if (messageText) messageText.textContent = message;
+    if (messageText) {
+      messageText.innerHTML = message;
+    }
     if (messageIcon) {
       messageIcon.textContent = type === 'success' ? '✓' : '✗';
     }
@@ -196,12 +200,12 @@ document.addEventListener("DOMContentLoaded", function () {
     messageContainer.className = `message-container ${type}`;
     messageContainer.style.display = 'flex';
     
-    // Auto-hide after 5 seconds
+
     setTimeout(() => {
       if (messageContainer) {
         messageContainer.style.display = 'none';
       }
-    }, 5000);
+    }, 7000);
   }
 
   // Close message
@@ -286,23 +290,21 @@ document.addEventListener("DOMContentLoaded", function () {
           throw authError;
         }
 
-        if (authData.user && !authData.session) {
-          // Email confirmation required
-          showMessage('Please check your email and click the confirmation link to complete your registration.', 'success');
-          signupForm.reset();
-        } else if (authData.session) {
+        if (authData.session) {
           // User logged in immediately
           showMessage('Account created successfully! Redirecting to dashboard...', 'success');
           setTimeout(() => {
             window.location.href = 'dashboard.html';
           }, 2000);
+        } else {
+          showMessage('If this email is not already registered, please check your email for a confirmation link. If you already have an account, <a href="login.html" style="color: inherit; text-decoration: underline;">please sign in instead</a>.');
         }
 
       } catch (error) {
         let errorMessage = 'An error occurred during signup. Please try again.';
         
-        if (error.message.includes('already registered')) {
-          errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+        if (error.message.includes('already') || error.message.includes('duplicate')) {
+          errorMessage = 'This email is already registered. <a href="login.html" style="color: inherit; text-decoration: underline;">Please sign in instead</a>';
         } else if (error.message.includes('Password')) {
           errorMessage = 'Password does not meet security requirements.';
         } else if (error.message.includes('Email')) {
