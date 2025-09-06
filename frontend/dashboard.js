@@ -1,813 +1,281 @@
-class Dashboard {
-    constructor() {
-        this.currentUser = null;
-        this.init();
+document.addEventListener("DOMContentLoaded", async function () {
+  const overlay = document.getElementById("dashboardLoadingOverlay");
+  const mainContent = document.getElementById("mainDashboardContent");
+  const userName = document.getElementById("userName");
+  const userEmail = document.getElementById("userEmail");
+  const userAvatar = document.getElementById("userAvatar");
+  const licenseCard = document.querySelector(".license-card .license-info");
+  const downloadBtn = document.querySelector(".download-btn.windows-btn");
+  const macDropdownBtn = document.getElementById("macDropdownBtn");
+  const macDropdownMenu = document.getElementById("macDropdownMenu");
+
+  let user, subscription;
+
+  function openSubscriptionModal() {
+    const modal = document.getElementById("subscriptionModalOverlay");
+    if (modal) {
+      modal.style.display = "flex";
+      document.body.style.overflow = "hidden";
+    }
+  }
+
+  function closeSubscriptionModal() {
+    const modal = document.getElementById("subscriptionModalOverlay");
+    if (modal) {
+      modal.style.setProperty("display", "none", "important");
+      document.body.style.overflow = "auto";
+    }
+  }
+
+  function setupModalListeners() {
+    const modalClose = document.getElementById("subscriptionModalClose");
+    const freeButton = document.querySelector('[data-plan="free"]');
+
+    if (modalClose) {
+      modalClose.addEventListener("click", closeSubscriptionModal);
     }
 
-    async init() {
-        try {
-            const loadingOverlay = document.getElementById('dashboardLoadingOverlay');
-            const mainContent = document.getElementById('mainDashboardContent');
-            if (loadingOverlay) loadingOverlay.style.display = 'flex';
-            if (mainContent) mainContent.style.display = 'none';
-
-            await this.handleAuthFlow();
-
-            if (loadingOverlay) loadingOverlay.style.display = 'none';
-            if (mainContent) mainContent.style.display = 'block';
-
-            this.initializeEventListeners();
-            this.loadUserData();
-            this.loadDashboardData();
-            this.setupVisibilityHandler();
-        } catch (error) {
-            const loadingOverlay = document.getElementById('dashboardLoadingOverlay');
-            const mainContent = document.getElementById('mainDashboardContent');
-            if (loadingOverlay) loadingOverlay.style.display = 'none';
-            if (mainContent) mainContent.style.display = 'none';
-            this.redirectToLogin();
-        }
+    if (freeButton) {
+      freeButton.addEventListener("click", closeSubscriptionModal);
     }
 
-    async handleAuthFlow() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const accessToken = urlParams.get('access_token');
-        const refreshToken = urlParams.get('refresh_token');
-        const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
-
-        if (error) {
-            this.redirectToLogin(`?error=${encodeURIComponent(errorDescription || 'Authentication failed')}`);
-            return;
-        }
-
-        if (accessToken && refreshToken) {
-            try {
-                const { data, error: sessionError } = await window.supabaseClient.auth.setSession({
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                });
-
-                if (sessionError) {
-                    throw sessionError;
-                }
-
-                window.history.replaceState({}, document.title, window.location.pathname);
-                this.currentUser = data.user;
-                await this.checkSubscriptionAndProceed(data.user);
-                return;
-            } catch (error) {
-                this.redirectToLogin('?error=Session setup failed');
-                return;
-            }
-        }
-
-        await this.checkAuthStatus();
-    }
-
-    async checkAuthStatus() {
-        try {
-            const { data: { user }, error } = await window.supabaseClient.auth.getUser();
+    // Setup billing toggle functionality
+    const toggleOptions = document.querySelectorAll('.toggle-option');
+    toggleOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            toggleOptions.forEach(opt => opt.classList.remove('active'));
+            this.classList.add('active');
             
-            if (error || !user) {
-                localStorage.removeItem('stepdoc_remember_me');
-                this.redirectToLogin();
-                return;
-            }
-            
-            this.currentUser = user;
-            await this.checkSubscriptionAndProceed(user);
-            
-        } catch (error) {
-            localStorage.removeItem('stepdoc_remember_me');
-            this.redirectToLogin();
-        }
-    }
-
-    async checkSubscriptionAndProceed(user) {
-        const emailJustVerified = sessionStorage.getItem('email_just_verified') === 'true';
-        const emailVerifiedAndLoggedIn = sessionStorage.getItem('email_verified_and_logged_in') === 'true';
-        const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
-        const urlParams = new URLSearchParams(window.location.search);
-        const isNewSession = urlParams.get('new_session') === 'true';
-        
-        // Check if this is a fresh login session first
-        if (isNewSession) {
-            // Set session as active BEFORE any other checks
-            sessionStorage.setItem('current_session', 'active');
-            sessionStorage.setItem('fresh_login_session', 'true');
-            
-            // Clean up URL
-            const url = new URL(window.location);
-            url.searchParams.delete('new_session');
-            window.history.replaceState({}, document.title, url.pathname);
-            
-            // Remove fresh login flag after 3 seconds
-            setTimeout(() => {
-                sessionStorage.removeItem('fresh_login_session');
-            }, 3000);
-            
-            // For new sessions, skip email verification entirely
-            // Proceed to subscription check
-        } else if (!user.email_confirmed && !emailJustVerified && !emailVerifiedAndLoggedIn && !rememberMeFlag) {
-            // Only remove remember me flag if user is not verified and doesn't have remember me
-            if (!rememberMeFlag) {
-                localStorage.removeItem('stepdoc_remember_me');
-            }
-            this.redirectToLogin('?message=Please verify your email before accessing dashboard');
-            return;
-        }
-        
-        if (emailJustVerified) {
-            sessionStorage.removeItem('email_just_verified');
-        }
-        if (emailVerifiedAndLoggedIn) {
-            sessionStorage.removeItem('email_verified_and_logged_in');
-        }
-        
-        const subscriptionInfo = await this.checkSubscriptionStatus(user);
-        if (subscriptionInfo.shouldShowModal) {
-            await this.showSubscriptionModal();
-        }
-        
-        // Re-read rememberMeFlag to ensure we have the latest value
-        const currentRememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
-        
-        // Allow access if either remember me is enabled OR it's a new session from login
-        if (!currentRememberMeFlag && !isNewSession) {
-            await this.forceLogout();
-            this.redirectToLogin();
-            return;
-        }
-    }
-
-    async checkSubscriptionStatus(user) {
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const skipSubscription = urlParams.get('skip_subscription') === 'true';
-            
-            if (skipSubscription) {
-                return { shouldShowModal: false, hasSubscription: true };
-            }
-            
-            const subscriptionData = localStorage.getItem('user_subscription');
-            if (subscriptionData) {
-                const subscription = JSON.parse(subscriptionData);
-                const now = new Date();
-                const expiryDate = new Date(subscription.expiresAt);
-                
-                // Pro or Pro Plus users with active subscriptions - no modal
-                if ((subscription.planType === 'pro' || subscription.planType === 'pro_plus') && now < expiryDate) {
-                    return { shouldShowModal: false, hasSubscription: true };
-                }
-                
-                // Free users or expired paid plans - show modal
-                if (subscription.planType === 'free' || now >= expiryDate) {
-                    return { shouldShowModal: true, hasSubscription: true };
-                }
-                
-                // Any other valid subscription - no modal
-                return { shouldShowModal: false, hasSubscription: true };
-            }
-            
-            // No subscription data - show modal for free users
-            return { shouldShowModal: true, hasSubscription: false };
-        } catch (error) {
-            return { shouldShowModal: true, hasSubscription: false };
-        }
-    }
-
-    initializeEventListeners() {
-        const userAvatar = document.querySelector('.user-avatar');
-        const userDropdown = document.querySelector('.user-dropdown');
-        if (userAvatar && userDropdown) {
-            userAvatar.addEventListener('click', (e) => {
-                e.stopPropagation();
-                userDropdown.classList.toggle('show');
-            });
-            document.addEventListener('click', (e) => {
-                if (!userDropdown.contains(e.target) && !userAvatar.contains(e.target)) {
-                    userDropdown.classList.remove('show');
-                }
-            });
-        }
-        const logoutBtn = document.querySelector('.logout-item');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.handleLogout();
-            });
-        }
-        const actionBtns = document.querySelectorAll('.action-btn');
-        actionBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.handleQuickAction(btn);
-            });
+            const period = this.dataset.period;
+            updatePricing(period);
         });
-        const macDropdownBtn = document.getElementById('macDropdownBtn');
-        const macDropdownMenu = document.getElementById('macDropdownMenu');
-        if (macDropdownBtn && macDropdownMenu) {
-            macDropdownBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                macDropdownBtn.classList.toggle('active');
-                macDropdownMenu.classList.toggle('show');
-            });
-            document.addEventListener('click', (e) => {
-                if (!macDropdownBtn.contains(e.target) && !macDropdownMenu.contains(e.target)) {
-                    macDropdownBtn.classList.remove('active');
-                    macDropdownMenu.classList.remove('show');
-                }
-            });
-            const macOptions = document.querySelectorAll('.mac-option');
-            macOptions.forEach(option => {
-                option.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const selectedText = option.dataset.text;
-                    const link = option.dataset.link;
-                    const btnText = macDropdownBtn.querySelector('.btn-text');
-                    btnText.textContent = selectedText;
-                    macDropdownBtn.classList.remove('active');
-                    macDropdownMenu.classList.remove('show');
-                    if (link && link !== 'https://example.com/mac-silicon.dmg' && link !== 'https://example.com/mac-intel.dmg') {
-                        window.open(link, '_blank');
-                    }
-                });
-            });
-        }
-        const windowsBtn = document.querySelector('.windows-btn');
-        if (windowsBtn) {
-            windowsBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const link = windowsBtn.dataset.link;
-                if (link && link !== 'https://example.com/windows.exe') {
-                    window.open(link, '_blank');
-                }
-            });
-        }
+    });
+  }
 
-        const contactSupportBtn = document.getElementById('contactSupportBtn');
-        const contactModal = document.getElementById('contactModal');
-        const closeContactModal = document.getElementById('closeContactModal');
-        const contactForm = document.getElementById('contactForm');
-
-        if (contactSupportBtn && contactModal) {
-            contactSupportBtn.addEventListener('click', () => {
-                contactModal.classList.add('show');
-            });
-
-            if (closeContactModal) {
-                closeContactModal.addEventListener('click', () => {
-                    contactModal.classList.remove('show');
-                });
-            }
-
-            contactModal.addEventListener('click', (e) => {
-                if (e.target === contactModal) {
-                    contactModal.classList.remove('show');
-                }
-            });
-
-            if (contactForm) {
-                contactForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(contactForm);
-                    const data = Object.fromEntries(formData);
-                    // ...existing code...
-                    contactModal.classList.remove('show');
-                    contactForm.reset();
-                });
-            }
-        }
+  function updatePricing(period) {
+    const proAmount = document.querySelector('.pro-plan .amount');
+    const proPrice = document.querySelector('.pro-plan .period');
+    const proPlusAmount = document.querySelector('.pro-plus-plan .amount');
+    const proPlusPrice = document.querySelector('.pro-plus-plan .period');
+    
+    if (period === 'yearly') {
+        if (proAmount) proAmount.textContent = '$7.99';
+        if (proPrice) proPrice.innerHTML = 'per month<br><small style="font-size: 0.7rem; color: #666; font-weight: normal; line-height: 0.8; margin: -2px 0 0 0; padding: 0; display: block;">billed annually</small>';
+        if (proPlusAmount) proPlusAmount.textContent = '$11.99';
+        if (proPlusPrice) proPlusPrice.innerHTML = 'per month<br><small style="font-size: 0.7rem; color: #666; font-weight: normal; line-height: 0.8; margin: -2px 0 0 0; padding: 0; display: block;">billed annually</small>';
+    } else {
+        if (proAmount) proAmount.textContent = '$9.99';
+        if (proPrice) proPrice.textContent = 'per month';
+        if (proPlusAmount) proPlusAmount.textContent = '$14.99';
+        if (proPlusPrice) proPlusPrice.textContent = 'per month';
     }
+  }
 
-
-
-
-    loadUserData() {
-        if (!this.currentUser) return;
-
-        const userNameEl = document.querySelector('.user-name');
-        const userEmailEl = document.querySelector('.user-email');
-        const userInitialEl = document.querySelector('.user-initial');
-
-        if (userNameEl) {
-            const displayName = this.currentUser.user_metadata?.full_name || 
-                              this.currentUser.email.split('@')[0];
-            userNameEl.textContent = displayName;
+  function loadSubscriptionModal() {
+    return fetch("subscription-modal-component.html")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        if (userEmailEl) {
-            userEmailEl.textContent = this.currentUser.email;
-        }
-
-        if (userInitialEl) {
-            const initial = this.currentUser.user_metadata?.full_name?.[0] || 
-                           this.currentUser.email[0];
-            userInitialEl.textContent = initial.toUpperCase();
-        }
-    }
-
-    async loadDashboardData() {
-        try {
-            this.showLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            this.updateStats({
-                documents: Math.floor(Math.random() * 50) + 10,
-                collaborators: Math.floor(Math.random() * 20) + 5,
-                projects: Math.floor(Math.random() * 15) + 3,
-                storage: Math.floor(Math.random() * 80) + 20
-            });
-            this.loadRecentActivity();
-            await this.loadSubscriptionData();
-            this.showLoading(false);
-        } catch (error) {
-            this.showLoading(false);
-        }
-    }
-
-    async fetchSubscriptionData() {
-        try {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (!session?.access_token) {
-                throw new Error('No valid session');
-            }
-
-            const response = await fetch('/api/subscription/status', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch subscription');
-            }
-
-            const result = await response.json();
-            return result;
-        } catch (error) {
-            return { active: false, subscription: null };
-        }
-    }
-
-    async loadSubscriptionData() {
-        try {
-            const subscriptionData = await this.fetchSubscriptionData();
-            this.updateLicenseCard(subscriptionData);
-            this.updateDownloadAccess(subscriptionData);
-        } catch (error) {
-            this.updateLicenseCard({ active: false, subscription: null });
-            this.updateDownloadAccess({ active: false, subscription: null });
-        }
-    }
-
-    updateLicenseCard(subscriptionData) {
-        const planElement = document.querySelector('.license-row .license-value');
-        const statusElement = document.querySelector('.status-badge');
-        const validUntilElement = document.querySelectorAll('.license-row .license-value')[2];
-        const daysRemainingElement = document.querySelectorAll('.license-row .license-value')[3];
-
-        if (subscriptionData.subscription) {
-            const subscription = subscriptionData.subscription;
-            const planName = this.getPlanDisplayName(subscription.plan_type);
-            const expiryDate = new Date(subscription.expires_at);
-            const daysRemaining = this.calculateDaysRemaining(expiryDate);
-            const isActive = subscriptionData.active;
-
-            if (planElement) planElement.textContent = planName;
-            if (statusElement) {
-                if (isActive) {
-                    statusElement.textContent = 'Active';
-                    statusElement.className = 'status-badge status-active';
-                } else {
-                    statusElement.textContent = 'Expired';
-                    statusElement.className = 'status-badge status-inactive';
-                }
-            }
-            if (validUntilElement) validUntilElement.textContent = this.formatDate(expiryDate);
-            if (daysRemainingElement) {
-                if (isActive) {
-                    daysRemainingElement.textContent = `${daysRemaining} days`;
-                } else {
-                    daysRemainingElement.textContent = 'Expired';
-                }
-            }
-        } else {
-            if (planElement) planElement.textContent = 'Free';
-            if (statusElement) {
-                statusElement.textContent = 'Active';
-                statusElement.className = 'status-badge status-active';
-            }
-            if (validUntilElement) validUntilElement.textContent = 'N/A';
-            if (daysRemainingElement) daysRemainingElement.textContent = 'N/A';
-        }
-    }
-
-    getPlanDisplayName(planType) {
-        switch (planType) {
-            case 'pro':
-                return 'Pro';
-            case 'pro_plus':
-                return 'Pro Plus';
-            default:
-                return 'Free';
-        }
-    }
-
-    calculateDaysRemaining(expiryDate) {
-        const now = new Date();
-        const timeDiff = expiryDate.getTime() - now.getTime();
-        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-        return Math.max(0, daysDiff);
-    }
-
-    formatDate(date) {
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
+        return response.text();
+      })
+      .then((html) => {
+        document.getElementById("subscriptionModalContainer").innerHTML = html;
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            setupModalListeners();
+            resolve();
+          }, 200);
         });
+      })
+      .catch((error) => {
+        throw error;
+      });
+  }
+
+  const { data: { user: supaUser } } = await window.supabaseClient.auth.getUser();
+  if (!supaUser) {
+    window.location.href = "login.html";
+    return;
+  }
+  user = supaUser;
+
+  userName.textContent = user.user_metadata?.full_name || user.user_metadata?.name || user.email;
+  userEmail.textContent = user.email;
+  if (user.user_metadata?.avatar_url) {
+    userAvatar.innerHTML = `<img src="${user.user_metadata.avatar_url}" alt="avatar" style="width:32px;height:32px;border-radius:50%">`;
+  } else {
+    userAvatar.textContent = (user.user_metadata?.name || user.email)[0].toUpperCase();
+  }
+
+  let { data: subs } = await window.supabaseClient
+    .from("subscriptions")
+    .select("plan_type,expires_at")
+    .eq("user_id", user.id)
+    .order("expires_at", { ascending: false })
+    .limit(1);
+
+  subscription = subs && subs.length ? subs[0] : { plan_type: "Free" };
+  let now = new Date();
+  let expiry = subscription.expires_at ? new Date(subscription.expires_at) : null;
+  let isActive = expiry && expiry > now && subscription.plan_type !== "Free";
+
+  let plan = isActive ? subscription.plan_type : "Free";
+  let status = isActive ? "Active" : "Inactive";
+  let validUntil = expiry ? expiry.toLocaleDateString() : "-";
+  let daysRemaining = expiry ? Math.max(0, Math.ceil((expiry - now) / (1000 * 60 * 60 * 24))) : "-";
+
+  licenseCard.innerHTML = `
+    <div class="license-row"><span class="license-label">Plan</span><span class="license-value">${plan}</span></div>
+    <div class="license-row"><span class="license-label">Status</span><span class="license-value"><span class="status-badge status-${isActive ? "active" : "inactive"}">${status}</span></span></div>
+    <div class="license-row"><span class="license-label">Valid Until</span><span class="license-value">${validUntil}</span></div>
+    <div class="license-row"><span class="license-label">Days Remaining</span><span class="license-value">${daysRemaining}</span></div>
+  `;
+
+  if (!isActive) {
+    downloadBtn.classList.add("disabled");
+    downloadBtn.setAttribute("tabindex", "-1");
+    downloadBtn.setAttribute("aria-disabled", "true");
+    macDropdownBtn.classList.add("disabled");
+    macDropdownBtn.setAttribute("tabindex", "-1");
+    macDropdownBtn.setAttribute("aria-disabled", "true");
+    macDropdownMenu.style.pointerEvents = "none";
+
+    loadSubscriptionModal().then(() => {
+      setTimeout(() => {
+        openSubscriptionModal();
+      }, 1000);
+    });
+  } else {
+    downloadBtn.classList.remove("disabled");
+    downloadBtn.removeAttribute("tabindex");
+    downloadBtn.removeAttribute("aria-disabled");
+    macDropdownBtn.classList.remove("disabled");
+    macDropdownBtn.removeAttribute("tabindex");
+    macDropdownBtn.removeAttribute("aria-disabled");
+    macDropdownMenu.style.pointerEvents = "auto";
+  }
+
+  overlay.style.display = "none";
+  mainContent.style.display = "block";
+
+  // Setup user dropdown functionality
+  const userDropdown = document.getElementById("userDropdown");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  // Toggle dropdown when clicking user avatar
+  userAvatar.addEventListener("click", function(e) {
+    e.stopPropagation();
+    userDropdown.classList.toggle("show");
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", function(e) {
+    if (!userAvatar.contains(e.target) && !userDropdown.contains(e.target)) {
+      userDropdown.classList.remove("show");
     }
+  });
 
-    updateDownloadAccess(subscriptionData) {
-        const windowsBtn = document.querySelector('.windows-btn');
-        const macDropdownBtn = document.getElementById('macDropdownBtn');
-        const macOptions = document.querySelectorAll('.mac-option');
-
-        const hasProPlus = subscriptionData.subscription && 
-                          subscriptionData.active && 
-                          subscriptionData.subscription.plan_type === 'pro_plus';
-
-        if (windowsBtn) {
-            if (hasProPlus) {
-                windowsBtn.style.opacity = '1';
-                windowsBtn.style.pointerEvents = 'auto';
-                windowsBtn.removeAttribute('disabled');
-            } else {
-                windowsBtn.style.opacity = '0.5';
-                windowsBtn.style.pointerEvents = 'none';
-                windowsBtn.setAttribute('disabled', 'true');
-            }
-        }
-
-        if (macDropdownBtn) {
-            if (hasProPlus) {
-                macDropdownBtn.style.opacity = '1';
-                macDropdownBtn.style.pointerEvents = 'auto';
-                macDropdownBtn.removeAttribute('disabled');
-            } else {
-                macDropdownBtn.style.opacity = '0.5';
-                macDropdownBtn.style.pointerEvents = 'none';
-                macDropdownBtn.setAttribute('disabled', 'true');
-            }
-        }
-
-        macOptions.forEach(option => {
-            if (hasProPlus) {
-                option.style.opacity = '1';
-                option.style.pointerEvents = 'auto';
-            } else {
-                option.style.opacity = '0.5';
-                option.style.pointerEvents = 'none';
-            }
-        });
-    }
-
-    updateStats(stats) {
-        const statNumbers = document.querySelectorAll('.stat-number');
-        
-        if (statNumbers[0]) statNumbers[0].textContent = stats.documents;
-        if (statNumbers[1]) statNumbers[1].textContent = stats.collaborators;
-        if (statNumbers[2]) statNumbers[2].textContent = stats.projects;
-        if (statNumbers[3]) statNumbers[3].textContent = `${stats.storage}%`;
-    }
-
-    loadRecentActivity() {
-        const activities = [
-            {
-                icon: '📄',
-                title: 'Created new document "Project Proposal"',
-                time: '2 minutes ago'
-            },
-            {
-                icon: '👥',
-                title: 'Added collaborator to Marketing Team',
-                time: '1 hour ago'
-            },
-            {
-                icon: '✅',
-                title: 'Completed review for Q4 Report',
-                time: '3 hours ago'
-            },
-            {
-                icon: '💾',
-                title: 'Exported document to PDF',
-                time: '1 day ago'
-            }
-        ];
-
-        const activityList = document.querySelector('.activity-list');
-        if (activityList) {
-            activityList.innerHTML = activities.map(activity => `
-                <div class="activity-item">
-                    <div class="activity-icon">${activity.icon}</div>
-                    <div class="activity-content">
-                        <div class="activity-title">${activity.title}</div>
-                        <div class="activity-time">${activity.time}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-    }
-
-    handleQuickAction(actionBtn) {
-        const action = actionBtn.dataset.action;
-        switch (action) {
-            case 'new-document':
-                this.createNewDocument();
-                break;
-            case 'upload-file':
-                this.uploadFile();
-                break;
-            case 'invite-team':
-                this.inviteTeamMember();
-                break;
-            case 'view-analytics':
-                this.viewAnalytics();
-                break;
-        }
-    }
-
-    createNewDocument() {
-    // ...existing code...
-    }
-
-    uploadFile() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.pdf,.doc,.docx,.txt';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                // ...existing code...
-            }
-        };
-        input.click();
-    }
-
-    inviteTeamMember() {
-        const email = prompt('Enter email address to invite:');
-        if (email && this.isValidEmail(email)) {
-            // ...existing code...
-        }
-    }
-
-    viewAnalytics() {
-    // ...existing code...
-    }
-
-    isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
-    showLoading(show) {
-        const mainContent = document.querySelector('.main-content');
-        if (mainContent) {
-            if (show) {
-                mainContent.classList.add('loading');
-            } else {
-                mainContent.classList.remove('loading');
-            }
-        }
-    }
-
-    async handleLogout() {
-        try {
-            const { error } = await window.supabaseClient.auth.signOut();
-            // Clear the remember me flag when logging out
-            localStorage.removeItem('stepdoc_remember_me');
-            if (error) {
-                return;
-            }
-            this.redirectToLogin();
-        } catch (error) {
-            // Clear the flag even if there's an error
-            localStorage.removeItem('stepdoc_remember_me');
-            this.redirectToLogin();
-        }
-    }
-
-    async forceLogout() {
-        try {
-            // Force clear Supabase session regardless of state
-            if (window.supabaseClient) {
-                await window.supabaseClient.auth.signOut();
-            }
-            // Clear all local storage flags and tokens
-            localStorage.removeItem('stepdoc_remember_me');
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-        } catch (error) {
-            // Even if Supabase logout fails, clear local storage
-            localStorage.removeItem('stepdoc_remember_me');
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-        }
-    }
-
-    setupVisibilityHandler() {
-        // Handle page visibility changes
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                // Page became visible - check if session should persist
-                const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
-                const hasActiveSession = sessionStorage.getItem('current_session') === 'active';
-                const isFreshLogin = sessionStorage.getItem('fresh_login_session') === 'true';
-                
-                // Don't redirect if this is a fresh login session
-                if (isFreshLogin) {
-                    return;
-                }
-                
-                if (!rememberMeFlag && !hasActiveSession) {
-                    // No remember me and no active session - redirect to login
-                    this.redirectToLogin();
-                }
-            }
-        });
-        
-        // Handle window beforeunload for non-remember-me sessions
-        window.addEventListener('beforeunload', () => {
-            const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
-            if (!rememberMeFlag) {
-                // Clear session for non-remember-me users when tab closes
-                sessionStorage.removeItem('current_session');
-            }
-        });
-        
-        // Handle page focus (add delay to prevent race conditions on page load)
-        window.addEventListener('focus', () => {
-            setTimeout(() => {
-                const rememberMeFlag = localStorage.getItem('stepdoc_remember_me') === 'true';
-                const hasActiveSession = sessionStorage.getItem('current_session') === 'active';
-                const isFreshLogin = sessionStorage.getItem('fresh_login_session') === 'true';
-                
-                // Don't redirect if this is a fresh login session
-                if (isFreshLogin) {
-                    return;
-                }
-                
-                if (!rememberMeFlag && !hasActiveSession) {
-                    this.redirectToLogin();
-                }
-            }, 500); // Small delay to ensure initialization is complete
-        });
-    }
-
-    async showSubscriptionModal() {
-        try {
-            await this.loadSubscriptionModal();
-            const modalOverlay = document.getElementById('subscriptionModalOverlay');
-            if (modalOverlay) {
-                modalOverlay.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-            }
-        } catch (error) {
-            console.error('Error showing subscription modal:', error);
-        }
-    }
-
-    async loadSubscriptionModal() {
-        // Check if modal is already loaded
-        if (document.getElementById('subscriptionModalOverlay')) {
-            return;
-        }
-
-        try {
-            // Load Stripe if not already loaded
-            if (typeof Stripe === 'undefined') {
-                await this.loadScript('https://js.stripe.com/v3/');
-            }
-
-            const response = await fetch('subscription-modal.html');
-            const html = await response.text();
-            
-            // Extract just the modal content from the HTML
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const modalOverlay = doc.querySelector('.modal-overlay');
-            
-            if (modalOverlay) {
-                // Add an ID for easier reference
-                modalOverlay.id = 'subscriptionModalOverlay';
-                
-                // Append to body
-                document.body.appendChild(modalOverlay);
-                
-                // Load subscription CSS if not already loaded
-                if (!document.querySelector('link[href="subscription.css"]')) {
-                    const link = document.createElement('link');
-                    link.rel = 'stylesheet';
-                    link.href = 'subscription.css';
-                    document.head.appendChild(link);
-                }
-                
-                // Initialize subscription functionality
-                this.initializeSubscriptionModal();
-            }
-        } catch (error) {
-            console.error('Error loading subscription modal:', error);
-        }
-    }
-
-    loadScript(src) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    }
-
-    initializeSubscriptionModal() {
-        if (typeof SubscriptionPage !== 'undefined') {
-            new SubscriptionPage(true);
-        } else {
-            if (!document.querySelector('script[src="subscription.js"]')) {
-                const script = document.createElement('script');
-                script.src = 'subscription.js';
-                script.onload = () => {
-                    if (typeof SubscriptionPage !== 'undefined') {
-                        new SubscriptionPage(true);
-                    }
-                };
-                document.head.appendChild(script);
-            } else {
-                setTimeout(() => {
-                    if (typeof SubscriptionPage !== 'undefined') {
-                        new SubscriptionPage(true);
-                    }
-                }, 100);
-            }
-        }
-        
-        const modalClose = document.getElementById('modalClose');
-        const modalOverlay = document.getElementById('subscriptionModalOverlay');
-        
-        if (modalClose) {
-            modalClose.addEventListener('click', () => this.closeSubscriptionModal());
-        }
-        
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', (e) => {
-                if (e.target === modalOverlay) {
-                    this.closeSubscriptionModal();
-                }
-            });
-        }
-    }
-
-    closeSubscriptionModal() {
-        const modalOverlay = document.getElementById('subscriptionModalOverlay');
-        if (modalOverlay) {
-            modalOverlay.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    }
-
-    redirectToLogin(params = '') {
-        window.location.href = 'login.html' + params;
-    }
-}
-
-// Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', async () => {
+  // Handle logout
+  logoutBtn.addEventListener("click", async function(e) {
+    e.preventDefault();
     try {
-        let attempts = 0;
-        const maxAttempts = 50;
-        while (attempts < maxAttempts) {
-            const supabaseAvailable = typeof window.supabase !== 'undefined' && 
-                                    typeof window.supabase.createClient === 'function';
-            if (supabaseAvailable) {
-                break;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-        }
-        if (attempts >= maxAttempts) {
-            throw new Error('Supabase not available after waiting');
-        }
-        new Dashboard();
+      await window.supabaseClient.auth.signOut();
+      window.location.href = "login.html";
     } catch (error) {
-        window.location.href = 'login.html';
+      console.error("Error signing out:", error);
+      alert("Error signing out. Please try again.");
     }
+  });
+
+  // Setup contact support modal functionality
+  const contactSupportBtn = document.getElementById("contactSupportBtn");
+  const contactModal = document.getElementById("contactModal");
+  const closeContactModal = document.getElementById("closeContactModal");
+  const contactForm = document.getElementById("contactForm");
+
+  contactSupportBtn.addEventListener("click", function() {
+    contactModal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+  });
+
+  closeContactModal.addEventListener("click", function() {
+    contactModal.style.display = "none";
+    document.body.style.overflow = "auto";
+  });
+
+  // Close modal when clicking outside content
+  contactModal.addEventListener("click", function(e) {
+    if (e.target === contactModal) {
+      contactModal.style.display = "none";
+      document.body.style.overflow = "auto";
+    }
+  });
+
+  // Handle contact form submission
+  contactForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+    // You can add actual form submission logic here
+    alert("Thank you for your message! We'll get back to you soon.");
+    contactModal.style.display = "none";
+    document.body.style.overflow = "auto";
+    contactForm.reset();
+  });
+
+  // Setup Mac dropdown functionality
+  macDropdownBtn.addEventListener("click", function(e) {
+    e.stopPropagation();
+    if (!macDropdownBtn.classList.contains("disabled")) {
+      macDropdownMenu.classList.toggle("show");
+    }
+  });
+
+  // Close Mac dropdown when clicking outside
+  document.addEventListener("click", function(e) {
+    if (!macDropdownBtn.contains(e.target) && !macDropdownMenu.contains(e.target)) {
+      macDropdownMenu.classList.remove("show");
+    }
+  });
+
+  // Handle Mac option selection
+  const macOptions = document.querySelectorAll(".mac-option");
+  macOptions.forEach(option => {
+    option.addEventListener("click", function(e) {
+      e.preventDefault();
+      const link = this.dataset.link;
+      const text = this.dataset.text;
+      
+      if (link) {
+        // Create temporary download link
+        const a = document.createElement("a");
+        a.href = link;
+        a.download = "";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      
+      macDropdownMenu.classList.remove("show");
+    });
+  });
+
+  // Handle Windows download
+  downloadBtn.addEventListener("click", function(e) {
+    e.preventDefault();
+    if (!this.classList.contains("disabled")) {
+      const link = this.dataset.link;
+      if (link) {
+        // Create temporary download link
+        const a = document.createElement("a");
+        a.href = link;
+        a.download = "";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    }
+  });
+
+  window.openSubscriptionModal = openSubscriptionModal;
+  window.closeSubscriptionModal = closeSubscriptionModal;
 });
-
-// Handle browser back/forward buttons
-window.addEventListener('popstate', (event) => {
-});
-
-

@@ -1,0 +1,595 @@
+<!-- Subscription Modal Component -->
+<!-- This modal can be included in dashboard.html or any other page -->
+<div class="subscription-modal-overlay" id="subscriptionModalOverlay" style="display: none;">
+    <div class="subscription-modal-container">
+        <button class="subscription-modal-close" id="subscriptionModalClose">×</button>
+        <div class="subscription-modal-content">
+            <div id="subscriptionLoadingOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#fff;z-index:100001;display:none;align-items:center;justify-content:center;font-size:1.5rem;border-radius:24px;">Processing...</div>
+
+            <div class="subscription-container">
+
+                <div class="main-heading">
+                    <h1>Choose Your Plan</h1>
+                </div>
+
+                <div class="billing-toggle">
+                    <div class="toggle-container">
+                        <button class="toggle-option active" data-period="monthly">Monthly</button>
+                        <button class="toggle-option" data-period="yearly">
+                            Yearly
+                            <span class="discount-badge">20% OFF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="plans-container">
+                    <div class="plan-card free-plan" data-plan="free">
+                        <div class="plan-header">
+                            <h3>Free</h3>
+                            <div class="price">
+                                <span class="amount">$0</span>
+                                <span class="period">/month</span>
+                            </div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>5 captures per month</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Basic export formats</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Chrome extension</span>
+                            </div>
+                        </div>
+                        <button class="plan-button free-button" data-plan="free">Continue for Free</button>
+                    </div>
+
+                    <div class="plan-card pro-plan popular" data-plan="pro">
+                        <div class="popular-badge">Most Popular</div>
+                        <div class="plan-header">
+                            <h3>Pro</h3>
+                            <div class="price">
+                                <span class="amount">$9.99</span>
+                                <span class="period">per month</span>
+                            </div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Unlimited captures</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>All export formats (PDF, Word, HTML)</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Chrome extension with Voice annotations</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Advanced editing features</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Priority support</span>
+                            </div>
+                        </div>
+                        <button class="plan-button pro-button" data-plan="pro">Start Pro Plan</button>
+                    </div>
+
+                    <div class="plan-card pro-plus-plan" data-plan="pro_plus">
+                        <div class="plan-header">
+                            <h3>Pro Plus</h3>
+                            <div class="price">
+                                <span class="amount">$14.99</span>
+                                <span class="period">per month</span>
+                            </div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Everything in Pro</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>All export formats (PDF, Word, HTML)</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Chrome extension + Desktop app</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Advanced editing features</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">✓</span>
+                                <span>Integrate to multiple platforms</span>
+                            </div>
+                        </div>
+                        <button class="plan-button pro-plus-button" data-plan="pro_plus">Start Pro Plus Plan</button>
+                    </div>
+                </div>
+
+                <div class="payment-section" id="paymentSection" style="display: none;">
+                    <div class="payment-container">
+                        <div class="payment-header">
+                            <h2>Complete Your Purchase</h2>
+                            <div class="selected-plan-info" id="selectedPlanInfo"></div>
+                        </div>
+
+                        <form class="payment-form" id="paymentForm">
+                            <div class="form-section">
+                                <h3>Billing Information</h3>
+                                <div class="form-group">
+                                    <label for="billingName">Full Name</label>
+                                    <input type="text" id="billingName" name="billingName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="billingEmail">Email Address</label>
+                                    <input type="email" id="billingEmail" name="billingEmail" required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="billingCountry">Country</label>
+                                        <select id="billingCountry" name="billingCountry" required>
+                                            <option value="">Select Country</option>
+                                            <option value="US">United States</option>
+                                            <option value="CA">Canada</option>
+                                            <option value="GB">United Kingdom</option>
+                                            <option value="DE">Germany</option>
+                                            <option value="FR">France</option>
+                                            <option value="IN">India</option>
+                                            <option value="AU">Australia</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="billingZip">ZIP/Postal Code</label>
+                                        <input type="text" id="billingZip" name="billingZip" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>Payment Method</h3>
+                                <div id="card-element" class="stripe-element"></div>
+                                <div id="card-errors" class="error-message"></div>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="security-info">
+                                    <div class="security-icon">🔒</div>
+                                    <div class="security-text">
+                                        <strong>Secure Payment</strong>
+                                        <p>Your payment information is encrypted and secure. We use Stripe for processing.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="back-button" id="backButton">Back to Plans</button>
+                                <button type="submit" class="submit-button" id="submitButton">
+                                    <span class="button-text">Complete Purchase</span>
+                                    <span class="button-loader" style="display: none;">Processing...</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <p>Already have an account? <a href="login.html">Sign in</a></p>
+                    <div class="security-badges">
+                        <span>🔒 SSL Secured</span>
+                        <span>💳 PCI Compliant</span>
+                        <span>🛡️ Stripe Protected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.subscription-modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(8px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important;
+    padding: 20px !important;
+    overflow-y: auto !important;
+    margin: 0 !important;
+    border: none !important;
+}
+
+.subscription-modal-container {
+    background: white !important;
+    border-radius: 24px !important;
+    max-width: 1200px !important;
+    width: 100% !important;
+    max-height: 90vh !important;
+    position: relative !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    animation: modalSlideIn 0.3s ease-out !important;
+    margin: auto !important;
+    overflow: hidden !important;
+    z-index: 99999 !important;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.subscription-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border: none !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 20px !important;
+    color: #6b7280 !important;
+    transition: all 0.3s ease !important;
+    z-index: 100000 !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+.subscription-modal-close:hover {
+    background: white;
+    color: #374151;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.subscription-modal-content {
+    padding: 30px 25px;
+    overflow-y: auto;
+    max-height: 90vh;
+}
+
+.subscription-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.main-heading {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.main-heading h1 {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+    color: #1a202c;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+
+.main-heading p {
+    font-size: 1.1rem;
+    color: #4a5568;
+    font-weight: 400;
+}
+
+.billing-toggle {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.toggle-label {
+    display: block;
+    font-size: 1.125rem;
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.toggle-container {
+    display: inline-flex;
+    background: #f3f4f6;
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid #e5e7eb;
+    position: relative;
+}
+
+.toggle-option {
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    min-width: 120px;
+}
+
+.toggle-option.active {
+    background: white;
+    color: #6366f1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+.toggle-option:hover:not(.active) {
+    color: #374151;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.discount-badge {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+}
+
+.plans-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-bottom: 30px;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.plan-card {
+    background: white;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 17px;
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 7px 18px -4px rgba(0, 0, 0, 0.1), 0 6px 7px -4px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+}
+
+.plan-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.plan-card.popular {
+    border: 2px solid #6366f1;
+    transform: scale(1.05);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.plan-card.popular:hover {
+    transform: scale(1.05) translateY(-8px);
+    box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.4);
+}
+
+.popular-badge {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 14px 0 rgba(34, 197, 94, 0.4);
+}
+
+.plan-header {
+    margin-bottom: 12px;
+}
+
+.plan-header h3 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 11px;
+    color: #1f2937;
+    letter-spacing: -0.025em;
+}
+
+.price {
+    margin-bottom: 16px;
+}
+
+.price .amount {
+    font-size: 2.7rem;
+    font-weight: 900;
+    color: #6366f1;
+    letter-spacing: -0.025em;
+}
+
+.price .period {
+    font-size: 1.25rem;
+    color: #6b7280;
+    margin-left: 8px;
+    font-weight: 500;
+}
+
+.plan-features {
+    flex: 1;
+    margin-bottom: 20px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.feature {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    padding: 6px 0;
+    color: #374151;
+}
+
+.feature-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 14px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #16a34a;
+    border: 2px solid #bbf7d0;
+}
+
+.plan-button {
+    margin-top: auto;
+    flex-shrink: 0;
+    padding: 16px 20px;
+    font-size: 1rem;
+    width: 100%;
+    border: none;
+    border-radius: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: -0.025em;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+}
+
+.free-button {
+    background: #f9fafb;
+    color: #374151;
+    border: 2px solid #e5e7eb;
+}
+
+.free-button:hover {
+    background: #f3f4f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.pro-button {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+}
+
+.pro-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+}
+
+.pro-plus-button {
+    background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+    color: white;
+    box-shadow: 0 4px 14px 0 rgba(236, 72, 153, 0.39);
+}
+
+.pro-plus-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(236, 72, 153, 0.5);
+}
+
+.payment-section {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    z-index: 10;
+    border-radius: 24px;
+    overflow-y: auto;
+}
+
+.footer-section {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .subscription-modal-container {
+        max-height: 95vh;
+        margin: 10px;
+    }
+    
+    .subscription-modal-content {
+        padding: 20px;
+    }
+    
+    .subscription-modal-close {
+        top: 15px;
+        right: 15px;
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
+    }
+
+    .plans-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0 5px;
+    }
+
+    .plan-card {
+        min-height: 380px;
+        max-height: none;
+        padding: 20px 16px;
+    }
+
+    .main-heading h1 {
+        font-size: 1.8rem;
+    }
+
+    .main-heading p {
+        font-size: 1rem;
+    }
+}
+</style>

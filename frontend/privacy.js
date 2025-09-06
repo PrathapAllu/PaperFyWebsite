@@ -1,6 +1,3 @@
-// privacy.js
-// Auto-update the last updated date every five days
-
 function updateLastUpdatedDate() {
     const lastUpdatedElem = document.getElementById('lastUpdated');
     if (!lastUpdatedElem) return;
