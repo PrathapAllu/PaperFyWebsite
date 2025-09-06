@@ -2,6 +2,34 @@ document.addEventListener("DOMContentLoaded", function () {
   const loginForm = document.getElementById("loginForm");
   if (!loginForm) return;
 
+  // Password toggle functionality
+  const togglePasswordBtn = document.getElementById("togglePassword");
+  const passwordInput = document.getElementById("loginPassword");
+  const eyeOpen = document.getElementById("eyeOpen");
+  const eyeClosed = document.getElementById("eyeClosed");
+
+  if (togglePasswordBtn && passwordInput && eyeOpen && eyeClosed) {
+    togglePasswordBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      
+      if (passwordInput.type === "password") {
+        // Show password
+        passwordInput.type = "text";
+        eyeOpen.style.display = "none";
+        eyeClosed.style.display = "block";
+        togglePasswordBtn.setAttribute("aria-label", "Hide password");
+        togglePasswordBtn.setAttribute("aria-pressed", "true");
+      } else {
+        // Hide password
+        passwordInput.type = "password";
+        eyeOpen.style.display = "block";
+        eyeClosed.style.display = "none";
+        togglePasswordBtn.setAttribute("aria-label", "Show password");
+        togglePasswordBtn.setAttribute("aria-pressed", "false");
+      }
+    });
+  }
+
   loginForm.addEventListener("submit", async function (e) {
     e.preventDefault();
     const email = document.getElementById("loginEmail").value;
