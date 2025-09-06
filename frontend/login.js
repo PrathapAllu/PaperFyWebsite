@@ -212,10 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
       const { data, error } = await window.supabaseClient.auth.signInWithPassword({
         email: email.trim(),
-        password: password,
-        options: {
-          persistSession: rememberMe
-        }
+        password: password
       });
 
       if (error) {
@@ -223,11 +220,16 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       if (data.session && data.user) {
-        // Store login preference
+        // Store login preference for the AuthManager to use
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
         } else {
           localStorage.removeItem('rememberMe');
+        }
+
+        // Let AuthManager handle the session management
+        if (window.authManager) {
+          window.authManager.onSignIn(data.session);
         }
 
         showLoginPageNotification("Login successful! Redirecting...", "success");

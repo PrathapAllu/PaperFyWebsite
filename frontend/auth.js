@@ -23,6 +23,9 @@ class AuthManager {
       }
     });
 
+    // Check if authenticated user is on login page
+    await this.redirectIfAuthenticated();
+
     // Start session monitoring
     this.startSessionMonitoring();
   }
@@ -106,6 +109,23 @@ class AuthManager {
   isProtectedPage() {
     const protectedPages = ['dashboard.html', 'profile.html'];
     return protectedPages.some(page => window.location.pathname.includes(page));
+  }
+
+  isLoginPage() {
+    return window.location.pathname.includes('login.html') || window.location.pathname.includes('signup.html');
+  }
+
+  async redirectIfAuthenticated() {
+    if (this.isLoginPage()) {
+      const session = await this.getCurrentSession();
+      const user = await this.getCurrentUser();
+      
+      if (session && user && !this.isSessionExpired()) {
+        window.location.href = 'dashboard.html';
+        return true;
+      }
+    }
+    return false;
   }
 
   isSessionExpired() {
