@@ -268,7 +268,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/dashboard.html`
+            redirectTo: `${window.location.origin}/frontend/dashboard.html`
           }
         });
         
