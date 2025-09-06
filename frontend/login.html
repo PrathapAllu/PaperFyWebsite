@@ -66,7 +66,7 @@
                                     <label class="checkbox-label">
                                         <input type="checkbox" id="rememberMe" name="rememberMe"> Keep me logged in
                                     </label>
-                                    <a href="#" class="forgot-link">Forgot password?</a>
+                                    <a href="#" class="forgot-link" id="forgotPasswordLink">Forgot password?</a>
                                 </div>
                                 <div class="consent-group">
                                     <input type="checkbox" id="privacyConsent" name="privacyConsent" required style="vertical-align: middle; margin-right: 6px;">
@@ -106,6 +106,32 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reset Password</h2>
+                <span class="close" id="closeForgotModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Enter your email address and we'll send you a link to reset your password.</p>
+                <form id="forgotPasswordForm">
+                    <div class="form-group">
+                        <label for="resetEmail" class="form-label">Email</label>
+                        <input type="email" id="resetEmail" name="email" class="form-input" required>
+                    </div>
+                    <button type="submit" class="auth-btn" id="resetPasswordBtn">
+                        <span class="btn-text">Send Reset Link</span>
+                        <div class="btn-loader" style="display: none;">
+                            <div class="spinner"></div>
+                        </div>
+                    </button>
+                </form>
+                <div id="resetMessage" class="reset-message" style="display: none;"></div>
             </div>
         </div>
     </div>
