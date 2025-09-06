@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
             
             // Redirect to login page after 3 seconds
             setTimeout(() => {
-                window.location.href = "login.html";
+                window.location.href = "login.html?reset=success";
             }, 3000);
 
         } catch (error) {

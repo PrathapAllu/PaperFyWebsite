@@ -2,6 +2,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const loginForm = document.getElementById("loginForm");
   if (!loginForm) return;
 
+  // Check if user came from password reset
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('reset') === 'success') {
+    showLoginPageNotification("Password updated successfully! You can now log in with your new password.", "success");
+  }
+
   // Password toggle functionality
   const togglePasswordBtn = document.getElementById("togglePassword");
   const passwordInput = document.getElementById("loginPassword");
@@ -90,7 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
           const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/reset-password.html`
+            redirectTo: `https://stepdoc-zeta.vercel.app/reset-password.html`
           });
 
           if (error) {
