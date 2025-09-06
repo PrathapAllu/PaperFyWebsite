@@ -26,8 +26,52 @@ document.addEventListener("DOMContentLoaded", function () {
       message: "Please enter a valid email address"
     },
     phone: {
-      required: true,
-      pattern: /^[\+]?[1-9][\d]{0,15}$/,
+      required: false, // Made optional
+      validator: function(value, countryCode = '+1') {
+        if (!value.trim()) return { isValid: true }; // Optional field
+        
+        // Remove all non-digits
+        const cleaned = value.replace(/\D/g, '');
+        
+        // Country-specific validation
+        switch(countryCode) {
+          case '+1': // US/Canada
+            return {
+              isValid: cleaned.length === 10,
+              message: "Please enter a valid 10-digit US phone number"
+            };
+          case '+44': // UK
+            return {
+              isValid: cleaned.length >= 10 && cleaned.length <= 11,
+              message: "Please enter a valid UK phone number"
+            };
+          case '+91': // India
+            return {
+              isValid: cleaned.length === 10,
+              message: "Please enter a valid 10-digit Indian phone number"
+            };
+          case '+33': // France
+            return {
+              isValid: cleaned.length === 10,
+              message: "Please enter a valid French phone number"
+            };
+          case '+49': // Germany
+            return {
+              isValid: cleaned.length >= 10 && cleaned.length <= 12,
+              message: "Please enter a valid German phone number"
+            };
+          case '+61': // Australia
+            return {
+              isValid: cleaned.length === 9,
+              message: "Please enter a valid 9-digit Australian phone number"
+            };
+          default:
+            return {
+              isValid: cleaned.length >= 7 && cleaned.length <= 15,
+              message: "Please enter a valid phone number"
+            };
+        }
+      },
       message: "Please enter a valid phone number"
     },
     password: {
@@ -45,6 +89,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (rule.required && !value.trim()) {
       return { isValid: false, message: `${fieldName} is required` };
+    }
+
+    // Handle custom validator (for phone)
+    if (rule.validator) {
+      const countryCode = fieldName === 'phone' ? getCurrentCountryCode() : undefined;
+      return rule.validator(value, countryCode);
     }
 
     if (rule.minLength && value.length < rule.minLength) {
@@ -66,7 +116,15 @@ document.addEventListener("DOMContentLoaded", function () {
     if (validationElement) {
       validationElement.textContent = message;
       validationElement.className = `validation-message ${isValid ? 'success' : 'error'}`;
-      validationElement.style.display = message ? 'block' : 'none';
+      
+      // Always show the element to maintain layout, but control visibility
+      validationElement.style.display = 'flex';
+      
+      if (!message) {
+        validationElement.style.visibility = 'hidden';
+      } else {
+        validationElement.style.visibility = 'visible';
+      }
     }
 
     if (inputElement) {
@@ -121,8 +179,8 @@ document.addEventListener("DOMContentLoaded", function () {
     else strengthBar.classList.add('strong');
   }
 
-  // Setup form field listeners
-  ['firstName', 'lastName', 'email', 'phone', 'password'].forEach(fieldName => {
+  // Setup form field listeners (excluding phone - handled separately)
+  ['firstName', 'lastName', 'email', 'password'].forEach(fieldName => {
     const field = document.getElementById(fieldName);
     if (field) {
       field.addEventListener('blur', function() {
@@ -181,6 +239,125 @@ document.addEventListener("DOMContentLoaded", function () {
   setupPasswordToggle('togglePassword', 'password');
   setupPasswordToggle('toggleConfirmPassword', 'confirmPassword');
 
+  // Terms checkbox event listener
+  const agreeTermsCheckbox = document.getElementById('agreeTerms');
+  if (agreeTermsCheckbox) {
+    agreeTermsCheckbox.addEventListener('change', function() {
+      const checkboxContainer = document.querySelector('.checkbox-container');
+      if (checkboxContainer && this.checked) {
+        // Remove any error highlighting when user checks the box
+        checkboxContainer.style.border = '';
+        checkboxContainer.style.padding = '';
+      }
+    });
+  }
+
+  // Phone number formatting and country selector functionality
+  let currentCountryCode = '+1';
+  let currentFormat = '(###) ###-####';
+
+  function getCurrentCountryCode() {
+    return currentCountryCode;
+  }
+
+  function formatPhoneNumber(value, format) {
+    const cleaned = value.replace(/\D/g, '');
+    let formatted = '';
+    let cleanedIndex = 0;
+
+    for (let i = 0; i < format.length && cleanedIndex < cleaned.length; i++) {
+      if (format[i] === '#') {
+        formatted += cleaned[cleanedIndex];
+        cleanedIndex++;
+      } else {
+        formatted += format[i];
+      }
+    }
+
+    return formatted;
+  }
+
+  // Country selector functionality
+  const countrySelector = document.getElementById('countrySelector');
+  const countryDropdown = document.getElementById('countryDropdown');
+  const countryFlag = document.getElementById('countryFlag');
+  const countryCodeSpan = document.getElementById('countryCode');
+  const phoneInput = document.getElementById('phone');
+
+  if (countrySelector && countryDropdown) {
+    countrySelector.addEventListener('click', function(e) {
+      e.preventDefault();
+      const isOpen = countryDropdown.style.display === 'block';
+      countryDropdown.style.display = isOpen ? 'none' : 'block';
+      countrySelector.classList.toggle('active', !isOpen);
+    });
+
+    // Handle country selection
+    countryDropdown.addEventListener('click', function(e) {
+      const option = e.target.closest('.country-option');
+      if (option) {
+        const newCode = option.dataset.code;
+        const newFlag = option.dataset.flag;
+        const newFormat = option.dataset.format;
+
+        currentCountryCode = newCode;
+        currentFormat = newFormat;
+
+        countryFlag.src = `https://flagcdn.com/w20/${newFlag}.png`;
+        countryCodeSpan.textContent = newCode;
+        
+        // Update placeholder based on format
+        const placeholderMap = {
+          '(###) ###-####': '(555) 123-4567',
+          '#### ### ####': '7911 123456',
+          '##### #####': '98765 43210',
+          '## ## ## ## ##': '01 23 45 67 89',
+          '### ### ####': '030 1234567',
+          '### ### ###': '412 345 678'
+        };
+        phoneInput.placeholder = placeholderMap[newFormat] || 'Enter phone number';
+
+        // Clear and reformat current value
+        if (phoneInput.value) {
+          const cleaned = phoneInput.value.replace(/\D/g, '');
+          phoneInput.value = formatPhoneNumber(cleaned, currentFormat);
+        }
+
+        countryDropdown.style.display = 'none';
+        countrySelector.classList.remove('active');
+      }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!countrySelector.contains(e.target) && !countryDropdown.contains(e.target)) {
+        countryDropdown.style.display = 'none';
+        countrySelector.classList.remove('active');
+      }
+    });
+  }
+
+  // Phone input formatting
+  if (phoneInput) {
+    phoneInput.addEventListener('input', function(e) {
+      const cleaned = this.value.replace(/\D/g, '');
+      const formatted = formatPhoneNumber(cleaned, currentFormat);
+      this.value = formatted;
+
+      // Clear validation message on input
+      showValidationMessage('phone', '', true);
+    });
+
+    phoneInput.addEventListener('blur', function() {
+      const validation = validateField('phone', this.value);
+      if (!validation.isValid) {
+        showValidationMessage('phone', validation.message, false);
+      } else {
+        showValidationMessage('phone', '', true);
+      }
+    });
+  }
+
 
 
   // Show message to user
@@ -230,8 +407,8 @@ document.addEventListener("DOMContentLoaded", function () {
         phone: formData.get('phone'),
         password: formData.get('password'),
         confirmPassword: formData.get('confirmPassword'),
-        agreeTerms: formData.get('agreeTerms'),
-        newsletter: formData.get('newsletter')
+        agreeTerms: formData.get('agreeTerms') === 'on', // Convert checkbox to boolean
+        newsletter: formData.get('newsletter') === 'on'  // Convert checkbox to boolean
       };
 
       // Validate all fields
@@ -255,7 +432,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Check terms agreement
       if (!data.agreeTerms) {
-        showMessage('Please agree to the Terms of Service and Privacy Policy');
+        showMessage('Please agree to the Terms of Service and Privacy Policy to continue.');
+        
+        // Highlight the checkbox area
+        const checkboxContainer = document.querySelector('.checkbox-container');
+        if (checkboxContainer) {
+          checkboxContainer.style.border = '1px solid #ef4444';
+          checkboxContainer.style.borderRadius = '4px';
+          checkboxContainer.style.padding = '8px';
+          
+          // Remove highlight after 3 seconds
+          setTimeout(() => {
+            checkboxContainer.style.border = '';
+            checkboxContainer.style.padding = '';
+          }, 3000);
+        }
         return;
       }
 

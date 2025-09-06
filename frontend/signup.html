@@ -112,16 +112,53 @@
 
                     <!-- Phone Field -->
                     <div class="form-group">
-                        <label for="phone" class="form-label">Phone Number</label>
-                        <div class="input-container">
+                        <label for="phone" class="form-label">Phone Number <span class="optional-text">(Optional)</span></label>
+                        <div class="input-container phone-container">
+                            <div class="country-selector" id="countrySelector">
+                                <img src="https://flagcdn.com/w20/us.png" alt="US Flag" class="country-flag" id="countryFlag">
+                                <span class="country-code" id="countryCode">+1</span>
+                                <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"></polyline>
+                                </svg>
+                            </div>
                             <input 
                                 type="tel" 
                                 id="phone" 
                                 name="phone" 
-                                class="form-input" 
-                                placeholder="Enter your phone number"
-                                required
+                                class="form-input phone-input" 
+                                placeholder="(555) 123-4567"
+                                maxlength="14"
                             >
+                            <div class="country-dropdown" id="countryDropdown" style="display: none;">
+                                <div class="country-option" data-code="+1" data-flag="us" data-format="(###) ###-####">
+                                    <img src="https://flagcdn.com/w20/us.png" alt="US">
+                                    <span>United States (+1)</span>
+                                </div>
+                                <div class="country-option" data-code="+44" data-flag="gb" data-format="#### ### ####">
+                                    <img src="https://flagcdn.com/w20/gb.png" alt="UK">
+                                    <span>United Kingdom (+44)</span>
+                                </div>
+                                <div class="country-option" data-code="+91" data-flag="in" data-format="##### #####">
+                                    <img src="https://flagcdn.com/w20/in.png" alt="India">
+                                    <span>India (+91)</span>
+                                </div>
+                                <div class="country-option" data-code="+33" data-flag="fr" data-format="## ## ## ## ##">
+                                    <img src="https://flagcdn.com/w20/fr.png" alt="France">
+                                    <span>France (+33)</span>
+                                </div>
+                                <div class="country-option" data-code="+49" data-flag="de" data-format="### ### ####">
+                                    <img src="https://flagcdn.com/w20/de.png" alt="Germany">
+                                    <span>Germany (+49)</span>
+                                </div>
+                                <div class="country-option" data-code="+61" data-flag="au" data-format="### ### ###">
+                                    <img src="https://flagcdn.com/w20/au.png" alt="Australia">
+                                    <span>Australia (+61)</span>
+                                </div>
+                                <div class="country-option" data-code="+1" data-flag="ca" data-format="(###) ###-####">
+                                    <img src="https://flagcdn.com/w20/ca.png" alt="Canada">
+                                    <span>Canada (+1)</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="validation-message" id="phoneValidation"></div>
                     </div>
@@ -182,8 +219,8 @@
                             <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
                             <span class="checkmark"></span>
                             <span class="checkbox-text">
-                                I agree to the <a href="#" class="terms-link">Terms of Service</a> 
-                                and <a href="#" class="terms-link">Privacy Policy</a>
+                                I agree to the <a href="privacy.html" class="terms-link" target="_blank">Terms of Service</a> 
+                                and <a href="privacy.html" class="terms-link" target="_blank">Privacy Policy</a>
                             </span>
                         </label>
                     </div>
