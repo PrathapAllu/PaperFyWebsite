@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   function formatPlanName(planType) {
     switch(planType) {
       case "pro": return "Pro";
-      case "pro_plus": return "Pro Plus";
+      case "pro plus": return "Pro Plus";
       default: return "Free";
     }
   }
