@@ -108,6 +108,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     userAvatar.textContent = (user.user_metadata?.name || user.email)[0].toUpperCase();
   }
 
+  // Fetch user subscription data
   let { data: subs } = await window.supabaseClient
     .from("subscriptions")
     .select("plan_type,expires_at")
@@ -115,38 +116,64 @@ document.addEventListener("DOMContentLoaded", async function () {
     .order("expires_at", { ascending: false })
     .limit(1);
 
-  subscription = subs && subs.length ? subs[0] : { plan_type: "Free" };
-  let now = new Date();
-  let expiry = subscription.expires_at ? new Date(subscription.expires_at) : null;
-  let isActive = expiry && expiry > now && subscription.plan_type !== "Free";
+  subscription = subs && subs.length ? subs[0] : { plan_type: "free" };
+  
+  // Determine user's current plan and access level
+  const planInfo = getUserPlanInfo(subscription);
+  
+  function getUserPlanInfo(subscription) {
+    const now = new Date();
+    const expiry = subscription.expires_at ? new Date(subscription.expires_at) : null;
+    const planType = (subscription.plan_type || "free").toLowerCase();
+    
+    // Check if subscription is active (not expired and not free)
+    const isActiveSubscription = expiry && expiry > now && planType !== "free";
+    
+    const plan = isActiveSubscription ? formatPlanName(planType) : "Free";
+    const canDownload = isActiveSubscription; // Pro and Pro Plus can download
+    const status = canDownload ? "Active" : (planType === "free" ? "Free Tier" : "Expired");
+    const validUntil = expiry ? expiry.toLocaleDateString() : "-";
+    const daysRemaining = expiry ? Math.max(0, Math.ceil((expiry - now) / (1000 * 60 * 60 * 24))) : "-";
+    
+    return { plan, canDownload, status, validUntil, daysRemaining, isActiveSubscription };
+  }
+  
+  function formatPlanName(planType) {
+    switch(planType) {
+      case "pro": return "Pro";
+      case "pro_plus": return "Pro Plus";
+      default: return "Free";
+    }
+  }
 
-  let plan = isActive ? subscription.plan_type : "Free";
-  let status = isActive ? "Active" : "Inactive";
-  let validUntil = expiry ? expiry.toLocaleDateString() : "-";
-  let daysRemaining = expiry ? Math.max(0, Math.ceil((expiry - now) / (1000 * 60 * 60 * 24))) : "-";
-
-  licenseCard.innerHTML = `
-    <div class="license-row"><span class="license-label">Plan</span><span class="license-value">${plan}</span></div>
-    <div class="license-row"><span class="license-label">Status</span><span class="license-value"><span class="status-badge status-${isActive ? "active" : "inactive"}">${status}</span></span></div>
-    <div class="license-row"><span class="license-label">Valid Until</span><span class="license-value">${validUntil}</span></div>
-    <div class="license-row"><span class="license-label">Days Remaining</span><span class="license-value">${daysRemaining}</span></div>
-  `;
-
-  if (!isActive) {
-    downloadBtn.classList.add("disabled");
-    downloadBtn.setAttribute("tabindex", "-1");
-    downloadBtn.setAttribute("aria-disabled", "true");
-    macDropdownBtn.classList.add("disabled");
-    macDropdownBtn.setAttribute("tabindex", "-1");
-    macDropdownBtn.setAttribute("aria-disabled", "true");
-    macDropdownMenu.style.pointerEvents = "none";
-
-    loadSubscriptionModal().then(() => {
-      setTimeout(() => {
-        openSubscriptionModal();
-      }, 1000);
-    });
-  } else {
+  // Update license information display
+  updateLicenseDisplay(planInfo);
+  
+  // Update download access based on plan
+  updateDownloadAccess(planInfo);
+  
+  function updateLicenseDisplay(planInfo) {
+    const statusClass = planInfo.canDownload ? "active" : "inactive";
+    licenseCard.innerHTML = `
+      <div class="license-row"><span class="license-label">Plan</span><span class="license-value">${planInfo.plan}</span></div>
+      <div class="license-row"><span class="license-label">Status</span><span class="license-value"><span class="status-badge status-${statusClass}">${planInfo.status}</span></span></div>
+      <div class="license-row"><span class="license-label">Valid Until</span><span class="license-value">${planInfo.validUntil}</span></div>
+      <div class="license-row"><span class="license-label">Days Remaining</span><span class="license-value">${planInfo.daysRemaining}</span></div>
+    `;
+  }
+  
+  function updateDownloadAccess(planInfo) {
+    if (planInfo.canDownload) {
+      // Enable downloads for Pro and Pro Plus users
+      enableDownloads();
+    } else {
+      // Disable downloads for Free users and show upgrade modal
+      disableDownloads();
+      showUpgradeModal();
+    }
+  }
+  
+  function enableDownloads() {
     downloadBtn.classList.remove("disabled");
     downloadBtn.removeAttribute("tabindex");
     downloadBtn.removeAttribute("aria-disabled");
@@ -154,6 +181,55 @@ document.addEventListener("DOMContentLoaded", async function () {
     macDropdownBtn.removeAttribute("tabindex");
     macDropdownBtn.removeAttribute("aria-disabled");
     macDropdownMenu.style.pointerEvents = "auto";
+    
+    // Remove upgrade message for paying users
+    removeUpgradeMessage();
+  }
+  
+  function disableDownloads() {
+    downloadBtn.classList.add("disabled");
+    downloadBtn.setAttribute("tabindex", "-1");
+    downloadBtn.setAttribute("aria-disabled", "true");
+    macDropdownBtn.classList.add("disabled");
+    macDropdownBtn.setAttribute("tabindex", "-1");
+    macDropdownBtn.setAttribute("aria-disabled", "true");
+    macDropdownMenu.style.pointerEvents = "none";
+    
+    // Add upgrade message for free users
+    addUpgradeMessage();
+  }
+  
+  function addUpgradeMessage() {
+    const downloadCard = document.querySelector('.download-card');
+    let upgradeMessage = downloadCard.querySelector('.upgrade-message');
+    
+    if (!upgradeMessage) {
+      upgradeMessage = document.createElement('div');
+      upgradeMessage.className = 'upgrade-message';
+      upgradeMessage.innerHTML = `
+        <div class="upgrade-text">
+          <span class="upgrade-icon">🔒</span>
+          <span>Upgrade to Pro or Pro Plus to download</span>
+        </div>
+        <button class="upgrade-btn" onclick="openSubscriptionModal()">Upgrade Now</button>
+      `;
+      downloadCard.appendChild(upgradeMessage);
+    }
+  }
+  
+  function removeUpgradeMessage() {
+    const upgradeMessage = document.querySelector('.upgrade-message');
+    if (upgradeMessage) {
+      upgradeMessage.remove();
+    }
+  }
+  
+  function showUpgradeModal() {
+    loadSubscriptionModal().then(() => {
+      setTimeout(() => {
+        openSubscriptionModal();
+      }, 1000);
+    });
   }
 
   overlay.style.display = "none";
