@@ -57,10 +57,14 @@ class AuthManager {
     
     // Store session metadata securely
     this.storeSessionMetadata(session);
+    
+    // Store user data for Chrome extension
+    this.storeUserDataForExtension(session);
   }
 
   onSignOut() {
     this.clearSessionData();
+    this.clearUserDataForExtension();
     
     // Redirect to login if on protected page
     if (this.isProtectedPage()) {
@@ -70,6 +74,7 @@ class AuthManager {
 
   onTokenRefresh(session) {
     this.updateLastActivity();
+    this.storeUserDataForExtension(session);
   }
 
   storeSessionMetadata(session) {
@@ -104,6 +109,26 @@ class AuthManager {
     localStorage.removeItem('rememberMe');
     this.user = null;
     this.session = null;
+  }
+
+  storeUserDataForExtension(session) {
+    if (session && session.user) {
+      const userData = {
+        username: session.user.email,
+        token: session.access_token,
+        expiresAt: session.expires_at,
+        plan: this.getUserPlan(session.user)
+      };
+      localStorage.setItem('stepdoc_user', JSON.stringify(userData));
+    }
+  }
+
+  clearUserDataForExtension() {
+    localStorage.removeItem('stepdoc_user');
+  }
+
+  getUserPlan(user) {
+    return user.user_metadata?.subscription_status || 'free';
   }
 
   isProtectedPage() {
