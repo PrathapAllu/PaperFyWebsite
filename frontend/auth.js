@@ -118,7 +118,7 @@ class AuthManager {
         const userPlan = await this.getUserPlanFromDatabase(session.user.id);
         
         const userData = {
-          username: session.user.full_name,
+          username: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email,
           email: session.user.email,
           token: session.access_token,
           expiresAt: session.expires_at,
@@ -129,7 +129,7 @@ class AuthManager {
         console.error('Error setting user data for extension:', error);
         // Fallback to old method
         const userData = {
-          username: session.user.email,
+          username: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email,
           token: session.access_token,
           expiresAt: session.expires_at,
           plan: this.getUserPlan(session.user)
