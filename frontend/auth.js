@@ -111,15 +111,31 @@ class AuthManager {
     this.session = null;
   }
 
-  storeUserDataForExtension(session) {
+  async storeUserDataForExtension(session) {
     if (session && session.user) {
-      const userData = {
-        username: session.user.email,
-        token: session.access_token,
-        expiresAt: session.expires_at,
-        plan: this.getUserPlan(session.user)
-      };
-      localStorage.setItem('stepdoc_user', JSON.stringify(userData));
+      try {
+        // Get actual subscription data from database
+        const userPlan = await this.getUserPlanFromDatabase(session.user.id);
+        
+        const userData = {
+          username: session.user.full_name,
+          email: session.user.email,
+          token: session.access_token,
+          expiresAt: session.expires_at,
+          plan: userPlan
+        };
+        localStorage.setItem('stepdoc_user', JSON.stringify(userData));
+      } catch (error) {
+        console.error('Error setting user data for extension:', error);
+        // Fallback to old method
+        const userData = {
+          username: session.user.email,
+          token: session.access_token,
+          expiresAt: session.expires_at,
+          plan: this.getUserPlan(session.user)
+        };
+        localStorage.setItem('stepdoc_user', JSON.stringify(userData));
+      }
     }
   }
 
@@ -129,6 +145,41 @@ class AuthManager {
 
   getUserPlan(user) {
     return user.user_metadata?.subscription_status || 'free';
+  }
+
+  async getUserPlanFromDatabase(userId) {
+    try {
+      // Fetch user subscription data (same logic as dashboard.js)
+      const { data: subs } = await this.supabase
+        .from("subscriptions")
+        .select("plan_type,expires_at")
+        .eq("user_id", userId)
+        .order("expires_at", { ascending: false })
+        .limit(1);
+
+      const subscription = subs && subs.length ? subs[0] : { plan_type: "free" };
+      
+      const now = new Date();
+      const expiry = subscription.expires_at ? new Date(subscription.expires_at) : null;
+      const planType = (subscription.plan_type || "free").toLowerCase();
+      
+      // Check if subscription is active (not expired and not free)
+      const isActiveSubscription = expiry && expiry > now && planType !== "free";
+      
+      // Return the display format that matches what dashboard.js uses
+      if (isActiveSubscription) {
+        switch(planType) {
+          case "pro": return "Pro";
+          case "pro plus": return "Pro Plus";
+          default: return "Free";
+        }
+      }
+      
+      return "Free";
+    } catch (error) {
+      console.error('Error fetching user plan:', error);
+      return this.getUserPlan({ user_metadata: {} }); // Fallback to old method
+    }
   }
 
   isProtectedPage() {
