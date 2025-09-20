@@ -125,6 +125,9 @@ class AuthManager {
           plan: userPlan
         };
         localStorage.setItem('stepdoc_user', JSON.stringify(userData));
+        
+        // Set cookie for extension sync
+        this.setAuthCookieForExtension(session);
       } catch (error) {
         console.error('Error setting user data for extension:', error);
         // Fallback to old method
@@ -135,12 +138,41 @@ class AuthManager {
           plan: this.getUserPlan(session.user)
         };
         localStorage.setItem('stepdoc_user', JSON.stringify(userData));
+        
+        // Set cookie for extension sync
+        this.setAuthCookieForExtension(session);
       }
     }
   }
 
   clearUserDataForExtension() {
     localStorage.removeItem('stepdoc_user');
+    this.clearAuthCookieForExtension();
+  }
+
+  // Set auth cookie for Chrome extension to detect
+  setAuthCookieForExtension(session) {
+    try {
+      const cookieData = {
+        user: session.user,
+        access_token: session.access_token,
+        expires_at: session.expires_at
+      };
+      
+      const expirationDate = new Date(session.expires_at * 1000);
+      document.cookie = `sb-bqemaogpiunlbdhzvlyd-auth-token=${JSON.stringify(cookieData)}; expires=${expirationDate.toUTCString()}; path=/; domain=.stepdoc-zeta.vercel.app; secure; samesite=lax`;
+    } catch (error) {
+      console.error('Failed to set auth cookie for extension:', error);
+    }
+  }
+
+  // Clear auth cookie for Chrome extension
+  clearAuthCookieForExtension() {
+    try {
+      document.cookie = 'sb-bqemaogpiunlbdhzvlyd-auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.stepdoc-zeta.vercel.app';
+    } catch (error) {
+      console.error('Failed to clear auth cookie for extension:', error);
+    }
   }
 
   getUserPlan(user) {
