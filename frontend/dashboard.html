@@ -92,22 +92,39 @@
                             <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </div>
-                    <h2 class="download-title">Latest Download</h2>
+                    <h2 class="download-title">Download</h2>
                 </div>
                     <div class="download-content">
+                        <a href="#" class="download-btn chrome-btn" data-link="https://example.com/chrome-extension">
+                            <span class="btn-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                    <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+                                    <line x1="21.17" x2="12" y1="8" y2="8" stroke="currentColor" stroke-width="2"/>
+                                    <line x1="3.95" x2="8.54" y1="6.06" y2="14" stroke="currentColor" stroke-width="2"/>
+                                    <line x1="10.88" x2="15.46" y1="21.94" y2="14" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                            </span>
+                            <span class="btn-text">Chrome Extension</span>
+                        </a>
                                             <a href="#" class="download-btn windows-btn" data-link="https://example.com/windows.exe">
                         <span class="btn-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M17.5 0H6.5C5.1193 0 4 1.1193 4 2.5V21.5C4 22.8807 5.1193 24 6.5 24H17.5C18.8807 24 20 22.8807 20 21.5V2.5C20 1.1193 18.8807 0 17.5 0Z" fill="currentColor"/>
-                                <path d="M8 4H16V6H8V4ZM8 8H16V10H8V8ZM8 12H16V14H8V12ZM8 16H16V18H8V16Z" fill="white"/>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.351"/>
                             </svg>
                         </span>
                         <span class="btn-text">Windows (.exe)</span>
                     </a>
                         <div class="mac-dropdown">
                             <button class="mac-dropdown-btn" id="macDropdownBtn">
-                                <span class="btn-icon">🍎</span>
-                                <span class="btn-text">Mac OS</span>
+                                <div class="btn-left-content">
+                                    <span class="btn-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                                        </svg>
+                                    </span>
+                                    <span class="btn-text">macOS</span>
+                                </div>
                                 <span class="dropdown-arrow">▼</span>
                             </button>
                             <div class="mac-dropdown-menu" id="macDropdownMenu">
@@ -166,7 +183,12 @@
         
         // Store the Supabase library reference and create client
         window.supabaseLib = window.supabase; // Keep the library
-        window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey); // Create client
+        window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true
+            }
+        }); // Create client
         
         // For backward compatibility, keep both available
         window.supabase = window.supabaseLib;

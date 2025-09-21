@@ -356,7 +356,7 @@ logoutBtn.addEventListener("click", async function(e) {
   }
 });
 
-  // Handle Windows download
+// Handle Windows download
   downloadBtn.addEventListener("click", function(e) {
     e.preventDefault();
     if (!this.classList.contains("disabled")) {
@@ -369,6 +369,18 @@ logoutBtn.addEventListener("click", async function(e) {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+      }
+    }
+  });
+
+  // Handle Chrome Extension download
+  const chromeBtn = document.querySelector(".download-btn.chrome-btn");
+  chromeBtn.addEventListener("click", function(e) {
+    e.preventDefault();
+    if (!this.classList.contains("disabled")) {
+      const link = this.dataset.link;
+      if (link) {
+        window.open(link, '_blank');
       }
     }
   });
