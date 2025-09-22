@@ -145,7 +145,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const validUntil = expiry ? expiry.toLocaleDateString() : "-";
     const daysRemaining = expiry ? Math.max(0, Math.ceil((expiry - now) / (1000 * 60 * 60 * 24))) : "-";
     
-    return { plan, canDownload, status, validUntil, daysRemaining, isActiveSubscription };
+    return { plan, canDownload, status, validUntil, daysRemaining, isActiveSubscription, planType };
   }
   
   function formatPlanName(planType) {
@@ -164,16 +164,27 @@ document.addEventListener("DOMContentLoaded", async function () {
   
   function updateLicenseDisplay(planInfo) {
     const statusClass = planInfo.canDownload ? "active" : "inactive";
-    licenseCard.innerHTML = `
+    const isProPlus = planInfo.isActiveSubscription && planInfo.planType === "pro plus";
+    
+    // Build license rows
+    let licenseRows = `
       <div class="license-row"><span class="license-label">Plan</span><span class="license-value">${planInfo.plan}</span></div>
       <div class="license-row"><span class="license-label">Status</span><span class="license-value"><span class="status-badge status-${statusClass}">${planInfo.status}</span></span></div>
       <div class="license-row"><span class="license-label">Valid Until</span><span class="license-value">${planInfo.validUntil}</span></div>
       <div class="license-row"><span class="license-label">Days Remaining</span><span class="license-value">${planInfo.daysRemaining}</span></div>
-      <div class="license-row"><span class="license-label">License Key</span><span class="license-value"><button class="show-key-btn" id="showKeyBtn">Show Key</button></span></div>
     `;
     
-    // Re-attach license key event listeners after content is updated
-    setupLicenseKeyModal();
+    // Only add License Key row for Pro Plus users
+    if (isProPlus) {
+      licenseRows += `<div class="license-row"><span class="license-label">License Key</span><span class="license-value"><button class="show-key-btn" id="showKeyBtn">Show Key</button></span></div>`;
+    }
+    
+    licenseCard.innerHTML = licenseRows;
+    
+    // Re-attach license key event listeners after content is updated (only for Pro Plus)
+    if (isProPlus) {
+      setupLicenseKeyModal();
+    }
   }
 
   function setupLicenseKeyModal() {
@@ -182,6 +193,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     const closeLicenseModal = document.getElementById("closeLicenseModal");
     const copyKeyBtn = document.getElementById("copyKeyBtn");
     const licenseKeyText = document.querySelector(".license-key-text");
+
+    // Generate or retrieve license key for the current user
+    const licenseKey = generateLicenseKey();
+    if (licenseKeyText) {
+      licenseKeyText.textContent = licenseKey;
+    }
 
     if (showKeyBtn) {
       showKeyBtn.addEventListener("click", function(e) {
@@ -253,6 +270,36 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
       });
     }
+  }
+
+  function generateLicenseKey() {
+    // Generate a license key based on user info and subscription
+    if (!user || !subscription) {
+      return "XXXX-XXXX-XXXX-XXXX";
+    }
+    
+    // Create a deterministic license key based on user ID and subscription
+    const userId = user.id || 'unknown';
+    const subscriptionId = subscription.id || subscription.stripe_subscription_id || 'default';
+    const planType = subscription.plan_type || 'pro_plus';
+    
+    // Simple hash function to create consistent license key
+    function simpleHash(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      return Math.abs(hash).toString(36).toUpperCase();
+    }
+    
+    const keyData = `${userId}-${subscriptionId}-${planType}`;
+    const hash = simpleHash(keyData);
+    
+    // Format as XXXX-XXXX-XXXX-XXXX
+    const paddedHash = (hash + '00000000000000000').substring(0, 16);
+    return `${paddedHash.slice(0,4)}-${paddedHash.slice(4,8)}-${paddedHash.slice(8,12)}-${paddedHash.slice(12,16)}`;
   }
   
   function updateDownloadAccess(planInfo) {
