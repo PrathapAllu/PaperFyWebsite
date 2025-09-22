@@ -629,7 +629,17 @@ body {
         padding: 16px;
     }
     
-
+    .cards-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    
+    .license-card,
+    .download-card {
+        width: 100%;
+        max-width: 500px;
+    }
     
     .page-title {
         font-size: 1.5rem;
@@ -732,7 +742,7 @@ body {
     background: white;
     border-radius: 8px;
     padding: 24px;
-    width: 400px;
+    width: 500px;
     max-width: 90vw;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     animation: modalSlideIn 0.3s ease;
@@ -770,11 +780,15 @@ body {
 }
 
 .license-key-display {
-    text-align: center;
     padding: 16px;
     background: #f8f9fa;
     border-radius: 6px;
     border: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 48px;
 }
 
 .license-key-text {
@@ -784,6 +798,43 @@ body {
     background: transparent;
     padding: 0;
     letter-spacing: 1px;
+    flex: 1;
+    text-align: left;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.copy-key-btn {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.copy-key-btn:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #495057;
+    transform: translateY(-1px);
+}
+
+.copy-key-btn:active {
+    transform: translateY(0);
+}
+
+.copy-key-btn.copied {
+    background: #d1edff;
+    border-color: #0ea5e9;
+    color: #0ea5e9;
 }
 
 @keyframes modalSlideIn {
@@ -801,9 +852,22 @@ body {
     .license-modal-content {
         padding: 20px;
         margin: 20px;
+        width: calc(100vw - 40px);
+    }
+    
+    .license-key-display {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
     }
     
     .license-key-text {
         font-size: 0.8rem;
+        text-align: center;
+        word-break: break-all;
+    }
+    
+    .copy-key-btn {
+        align-self: center;
     }
 }

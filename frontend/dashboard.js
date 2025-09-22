@@ -169,7 +169,90 @@ document.addEventListener("DOMContentLoaded", async function () {
       <div class="license-row"><span class="license-label">Status</span><span class="license-value"><span class="status-badge status-${statusClass}">${planInfo.status}</span></span></div>
       <div class="license-row"><span class="license-label">Valid Until</span><span class="license-value">${planInfo.validUntil}</span></div>
       <div class="license-row"><span class="license-label">Days Remaining</span><span class="license-value">${planInfo.daysRemaining}</span></div>
+      <div class="license-row"><span class="license-label">License Key</span><span class="license-value"><button class="show-key-btn" id="showKeyBtn">Show Key</button></span></div>
     `;
+    
+    // Re-attach license key event listeners after content is updated
+    setupLicenseKeyModal();
+  }
+
+  function setupLicenseKeyModal() {
+    const showKeyBtn = document.getElementById("showKeyBtn");
+    const licenseKeyModal = document.getElementById("licenseKeyModal");
+    const closeLicenseModal = document.getElementById("closeLicenseModal");
+    const copyKeyBtn = document.getElementById("copyKeyBtn");
+    const licenseKeyText = document.querySelector(".license-key-text");
+
+    if (showKeyBtn) {
+      showKeyBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        licenseKeyModal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+      });
+    }
+
+    if (closeLicenseModal) {
+      closeLicenseModal.addEventListener("click", function() {
+        licenseKeyModal.style.display = "none";
+        document.body.style.overflow = "auto";
+      });
+    }
+
+    if (copyKeyBtn && licenseKeyText) {
+      copyKeyBtn.addEventListener("click", async function() {
+        try {
+          const textToCopy = licenseKeyText.textContent || licenseKeyText.innerText;
+          
+          // Try modern clipboard API first
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(textToCopy);
+          } else {
+            // Fallback for older browsers or non-secure contexts
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            textArea.remove();
+          }
+          
+          // Visual feedback
+          const originalIcon = copyKeyBtn.innerHTML;
+          copyKeyBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          `;
+          copyKeyBtn.classList.add("copied");
+          
+          setTimeout(() => {
+            copyKeyBtn.innerHTML = originalIcon;
+            copyKeyBtn.classList.remove("copied");
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy: ', err);
+          // Show user feedback for copy failure
+          copyKeyBtn.style.background = "#fee";
+          setTimeout(() => {
+            copyKeyBtn.style.background = "";
+          }, 1000);
+        }
+      });
+    }
+
+    // Close modal when clicking outside
+    if (licenseKeyModal) {
+      licenseKeyModal.addEventListener("click", function(e) {
+        if (e.target === licenseKeyModal) {
+          licenseKeyModal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    }
   }
   
   function updateDownloadAccess(planInfo) {
@@ -344,36 +427,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       macDropdownMenu.classList.remove("show");
     });
   });
-
-  // License Key Modal functionality
-  const showKeyBtn = document.getElementById("showKeyBtn");
-  const licenseKeyModal = document.getElementById("licenseKeyModal");
-  const closeLicenseModal = document.getElementById("closeLicenseModal");
-
-  if (showKeyBtn) {
-    showKeyBtn.addEventListener("click", function(e) {
-      e.preventDefault();
-      licenseKeyModal.style.display = "flex";
-      document.body.style.overflow = "hidden";
-    });
-  }
-
-  if (closeLicenseModal) {
-    closeLicenseModal.addEventListener("click", function() {
-      licenseKeyModal.style.display = "none";
-      document.body.style.overflow = "auto";
-    });
-  }
-
-  // Close modal when clicking outside
-  if (licenseKeyModal) {
-    licenseKeyModal.addEventListener("click", function(e) {
-      if (e.target === licenseKeyModal) {
-        licenseKeyModal.style.display = "none";
-        document.body.style.overflow = "auto";
-      }
-    });
-  }
 
 logoutBtn.addEventListener("click", async function(e) {
   e.preventDefault();
