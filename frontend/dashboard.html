@@ -82,6 +82,12 @@
                             <span class="license-label">Days Remaining</span>
                             <span class="license-value">427 days</span>
                         </div>
+                        <div class="license-row">
+                            <span class="license-label">License Key</span>
+                            <span class="license-value">
+                                <button class="show-key-btn" id="showKeyBtn">Show Key</button>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -167,6 +173,19 @@
                     </div>
                     <button type="submit" class="submit-btn">Send Message</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- License Key Modal -->
+        <div class="license-key-modal" id="licenseKeyModal">
+            <div class="license-modal-content">
+                <div class="license-modal-header">
+                    <h3>License Key</h3>
+                    <button class="close-btn" id="closeLicenseModal">&times;</button>
+                </div>
+                <div class="license-key-display">
+                    <code class="license-key-text">xxxx-xxxx-xxxx-xxxx</code>
+                </div>
             </div>
         </div>
     </div>

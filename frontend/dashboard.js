@@ -345,6 +345,36 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 
+  // License Key Modal functionality
+  const showKeyBtn = document.getElementById("showKeyBtn");
+  const licenseKeyModal = document.getElementById("licenseKeyModal");
+  const closeLicenseModal = document.getElementById("closeLicenseModal");
+
+  if (showKeyBtn) {
+    showKeyBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      licenseKeyModal.style.display = "flex";
+      document.body.style.overflow = "hidden";
+    });
+  }
+
+  if (closeLicenseModal) {
+    closeLicenseModal.addEventListener("click", function() {
+      licenseKeyModal.style.display = "none";
+      document.body.style.overflow = "auto";
+    });
+  }
+
+  // Close modal when clicking outside
+  if (licenseKeyModal) {
+    licenseKeyModal.addEventListener("click", function(e) {
+      if (e.target === licenseKeyModal) {
+        licenseKeyModal.style.display = "none";
+        document.body.style.overflow = "auto";
+      }
+    });
+  }
+
 logoutBtn.addEventListener("click", async function(e) {
   e.preventDefault();
   try {
