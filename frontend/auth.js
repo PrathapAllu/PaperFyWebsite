@@ -156,7 +156,8 @@ class AuthManager {
       const cookieData = {
         user: session.user,
         access_token: session.access_token,
-        expires_at: session.expires_at
+        expires_at: session.expires_at,
+        plan: userPlan
       };
       
       const expirationDate = new Date(session.expires_at * 1000);
