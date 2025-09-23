@@ -127,7 +127,7 @@ class AuthManager {
         localStorage.setItem('stepdoc_user', JSON.stringify(userData));
         
         // Set cookie for extension sync
-        this.setAuthCookieForExtension(session);
+        this.setAuthCookieForExtension(session, userPlan);
       } catch (error) {
         console.error('Error setting user data for extension:', error);
         // Fallback to old method
@@ -140,7 +140,7 @@ class AuthManager {
         localStorage.setItem('stepdoc_user', JSON.stringify(userData));
         
         // Set cookie for extension sync
-        this.setAuthCookieForExtension(session);
+        this.setAuthCookieForExtension(session, this.getUserPlan(session.user));
       }
     }
   }
@@ -151,8 +151,10 @@ class AuthManager {
   }
 
   // Set auth cookie for Chrome extension to detect
-  setAuthCookieForExtension(session) {
+  setAuthCookieForExtension(session, userPlan) {
     try {
+      console.log('🌐 Website: Setting cookie with plan data for extension:', userPlan);
+      
       const cookieData = {
         user: session.user,
         access_token: session.access_token,
@@ -177,6 +179,7 @@ class AuthManager {
   }
 
   getUserPlan(user) {
+    console.log('Here is plan we send to extension:', user.user_metadata?.subscription_status);
     return user.user_metadata?.subscription_status || 'free';
   }
 
